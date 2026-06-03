@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { MainShell } from "@/components/layout/main-shell";
 import { LeaderboardList } from "@/features/rankings/components/leaderboard-list";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { getServerI18n } from "@/i18n/get-server-i18n";
 import { getGameBySlug } from "@/services/game.service";
 import {
   getGameLeaderboard,
@@ -16,16 +17,18 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
+  const { t } = await getServerI18n();
   const game = await getGameBySlug(slug);
-  if (!game) return { title: "Ranking" };
+  if (!game) return { title: t("rankings.metadataTitle") };
   return buildPageMetadata({
-    title: `Ranking — ${game.name}`,
+    title: t("rankings.pageTitle", { name: game.name }),
     path: `/rankings/${slug}`,
   });
 }
 
 export default async function GameRankingPage({ params }: PageProps) {
   const { slug } = await params;
+  const { t } = await getServerI18n();
   const game = await getGameBySlug(slug);
   if (!game) notFound();
 
@@ -34,17 +37,15 @@ export default async function GameRankingPage({ params }: PageProps) {
 
   return (
     <MainShell className="max-w-2xl">
-      <h1 className="text-2xl font-bold">Ranking — {game.name}</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Rankings oficiais para utilizadores registados.
-      </p>
+      <h1 className="text-2xl font-bold">{t("rankings.pageTitle", { name: game.name })}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{t("rankings.officialHint")}</p>
 
       <div className="mt-8">
         <LeaderboardList entries={entries} metric={metric} gameSlug={game.slug} />
       </div>
 
       <Button variant="ghost" className="mt-8" asChild>
-        <Link href={`/games/${game.slug}`}>← Voltar ao jogo</Link>
+        <Link href={`/games/${game.slug}`}>{t("rankings.backToGame")}</Link>
       </Button>
     </MainShell>
   );

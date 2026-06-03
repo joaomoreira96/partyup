@@ -1,5 +1,8 @@
+"use client";
+
 import type { ComponentType } from "react";
 import { Flame, Medal, Star, Trophy } from "lucide-react";
+import { useI18n } from "@/features/i18n/locale-provider";
 import type { Achievement } from "@/types/platform";
 import { cn } from "@/lib/utils";
 
@@ -16,16 +19,17 @@ export function PublicAchievements({
 }: {
   achievements: Achievement[];
 }) {
+  const { t } = useI18n();
   const unlocked = achievements.filter((a) => a.unlocked_at);
 
   return (
     <section aria-labelledby="public-achievements-heading">
       <h2 id="public-achievements-heading" className="text-xl font-bold">
-        Conquistas
+        {t("publicProfile.achievements")}
       </h2>
       {unlocked.length === 0 ? (
         <p className="mt-4 text-sm text-muted-foreground">
-          Nenhuma conquista desbloqueada ainda.
+          {t("publicProfile.noAchievements")}
         </p>
       ) : (
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

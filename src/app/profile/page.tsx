@@ -7,6 +7,7 @@ import { AchievementsGrid } from "@/features/profile/components/achievements-gri
 import { FavoriteGamesSection } from "@/features/profile/components/favorite-games";
 import { ProfileSettings } from "@/features/profile/components/profile-settings";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { getServerI18n } from "@/i18n/get-server-i18n";
 import {
   getCurrentProfile,
   getSessionUser,
@@ -17,32 +18,35 @@ import { getFeaturedGames } from "@/services/game.service";
 import { getUserStats } from "@/services/stats.service";
 import { Button } from "@/components/ui/button";
 
-export const metadata = buildPageMetadata({
-  title: "Perfil",
-  path: "/profile",
-  noIndex: true,
-});
+export async function generateMetadata() {
+  const { t } = await getServerI18n();
+  return buildPageMetadata({
+    title: t("profile.title"),
+    path: "/profile",
+    noIndex: true,
+  });
+}
 
 export default async function ProfilePage() {
+  const { t, locale } = await getServerI18n();
+  const numberLocale = locale === "pt" ? "pt-PT" : "en-US";
   const user = await getSessionUser();
 
   if (!user) {
     return (
       <MainShell className="max-w-lg text-center">
-        <h1 className="text-2xl font-bold">O teu perfil</h1>
-        <p className="mt-4 text-muted-foreground">
-          Inicia sessão para ver estatísticas e conquistas.
-        </p>
+        <h1 className="text-2xl font-bold">{t("profile.privateTitle")}</h1>
+        <p className="mt-4 text-muted-foreground">{t("profile.loginPrompt")}</p>
         <Button className="mt-6" asChild>
-          <Link href="/login">Entrar</Link>
+          <Link href="/login">{t("profile.loginCta")}</Link>
         </Button>
         <p className="mt-4 text-sm">
-          Ou{" "}
+          {t("common.or")}{" "}
           <Link
             href="/games/memoria-classica/play"
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
-            continua como convidado
+            {t("profile.guestContinue")}
           </Link>
         </p>
       </MainShell>
@@ -64,18 +68,18 @@ export default async function ProfilePage() {
 
   const statCards = [
     {
-      label: "Jogos",
+      label: t("profile.stats.games"),
       value: stats.total_games_played,
       icon: Gamepad2,
     },
     {
-      label: "Tempo",
-      value: `${playMinutes} min`,
+      label: t("profile.stats.time"),
+      value: t("profile.stats.minutes", { min: playMinutes }),
       icon: Clock,
     },
     {
-      label: "Recorde",
-      value: Math.round(stats.highest_score).toLocaleString("pt-PT"),
+      label: t("profile.stats.record"),
+      value: Math.round(stats.highest_score).toLocaleString(numberLocale),
       icon: Target,
     },
   ];
@@ -90,7 +94,7 @@ export default async function ProfilePage() {
               href={`/players/${profile.username}`}
               className="text-primary hover:underline"
             >
-              Ver perfil público →
+              {t("profile.publicLink")}
             </Link>
           ) : undefined
         }

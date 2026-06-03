@@ -1,15 +1,20 @@
+"use client";
+
 import Link from "next/link";
 import { Trophy } from "lucide-react";
-import { formatRecordScore } from "@/services/public-profile.service";
+import { useI18n } from "@/features/i18n/locale-provider";
+import { formatRecordScore } from "@/lib/profile/public-display";
 import type { PersonalRecord } from "@/types/platform";
 
 export function PublicRecords({ records }: { records: PersonalRecord[] }) {
+  const { t } = useI18n();
+
   if (records.length === 0) return null;
 
   return (
     <section aria-labelledby="records-heading">
       <h2 id="records-heading" className="text-xl font-bold">
-        Recordes pessoais
+        {t("publicProfile.records")}
       </h2>
       <ul className="mt-4 grid gap-3 sm:grid-cols-2">
         {records.map((record) => (
@@ -29,7 +34,7 @@ export function PublicRecords({ records }: { records: PersonalRecord[] }) {
                 href={`/rankings/${record.slug}`}
                 className="mt-1 text-xs text-primary hover:underline"
               >
-                Ver ranking →
+                {t("publicProfile.seeRanking")}
               </Link>
             </div>
           </li>

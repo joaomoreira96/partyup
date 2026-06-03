@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Profile } from "@/types/platform";
 
@@ -18,6 +21,8 @@ export function ProfileHeader({
   profile: Pick<Profile, "display_name" | "username" | "avatar_url" | "bio">;
   subtitle?: ReactNode;
 }) {
+  const { t } = useI18n();
+
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:text-left">
       <Avatar className="size-20 ring-2 ring-primary/30 sm:size-24">
@@ -38,7 +43,7 @@ export function ProfileHeader({
           {profile.username ? (
             <>@{profile.username}</>
           ) : (
-            <>Tag de jogador por definir — configura abaixo</>
+            <>{t("profile.tagPending")}</>
           )}
         </p>
         {profile.bio && (

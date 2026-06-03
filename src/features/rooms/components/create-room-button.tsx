@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users } from "lucide-react";
 import { getGuestName } from "@/lib/guest";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ export function CreateRoomButton({
   supportsMultiplayer: boolean;
 }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
 
   if (!supportsMultiplayer) return null;
@@ -29,9 +31,9 @@ export function CreateRoomButton({
       });
       const data = await res.json();
       if (data.joinUrl) router.push(data.joinUrl);
-      else toast.error("Não foi possível criar a sala.");
+      else toast.error(t("room.createFailed"));
     } catch {
-      toast.error("Ligação indisponível.");
+      toast.error(t("room.offline"));
     } finally {
       setLoading(false);
     }
@@ -45,7 +47,7 @@ export function CreateRoomButton({
       aria-busy={loading}
     >
       <Users className="size-4" aria-hidden />
-      {loading ? "A criar..." : "Criar sala"}
+      {loading ? t("common.creating") : t("room.createRoom")}
     </Button>
   );
 }

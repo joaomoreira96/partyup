@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { LeaderboardPodium } from "@/components/design/leaderboard-podium";
 import { EmptyState } from "@/components/shared/page-states";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { formatScoreForMetric } from "@/lib/games/types";
 import type { LeaderboardEntry, LeaderboardMetric } from "@/types/platform";
+
 export function LeaderboardList({
   entries,
   metric,
@@ -12,12 +16,14 @@ export function LeaderboardList({
   metric: LeaderboardMetric;
   gameSlug?: string;
 }) {
+  const { t } = useI18n();
+
   if (!entries.length) {
     return (
       <EmptyState
-        title="Sem pontuações ainda"
-        description="Sê o primeiro no ranking — cria conta e joga!"
-        actionLabel="Criar conta"
+        title={t("rankings.emptyLeaderboardTitle")}
+        description={t("rankings.emptyLeaderboardDescription")}
+        actionLabel={t("auth.registerCta")}
         actionHref="/register"
       />
     );
@@ -32,7 +38,7 @@ export function LeaderboardList({
       )}
 
       {rest.length > 0 && (
-        <ol className="space-y-2" aria-label="Restante classificação">
+        <ol className="space-y-2" aria-label={t("rankings.remainingClassification")}>
           {rest.map((entry, i) => (
             <li
               key={entry.id}
@@ -50,7 +56,7 @@ export function LeaderboardList({
                     {entry.profile.display_name ?? entry.profile.username}
                   </Link>
                 ) : (
-                  (entry.profile?.display_name ?? "Jogador")
+                  (entry.profile?.display_name ?? t("common.player"))
                 )}
               </span>
               <span className="font-mono text-sm font-semibold tabular-nums text-primary">
@@ -62,7 +68,7 @@ export function LeaderboardList({
       )}
 
       {entries.length <= 3 && entries.length > 0 && (
-        <ol className="sr-only" aria-label="Classificação completa">
+        <ol className="sr-only" aria-label={t("rankings.remainingClassification")}>
           {entries.map((e, i) => (
             <li key={e.id}>
               {i + 1}. {e.profile?.display_name}
@@ -77,7 +83,7 @@ export function LeaderboardList({
             href={`/games/${gameSlug}/play`}
             className="font-medium text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
           >
-            Jogar e subir no ranking
+            {t("rankings.playAndClimb")}
           </Link>
         </p>
       )}

@@ -1,14 +1,20 @@
+"use client";
+
 import { formatDistanceToNow } from "date-fns";
-import { pt } from "date-fns/locale";
+import { enUS, pt } from "date-fns/locale";
+import { useI18n } from "@/features/i18n/locale-provider";
 import type { ProfileActivityItem } from "@/types/platform";
 
 export function PublicActivity({ items }: { items: ProfileActivityItem[] }) {
+  const { t, locale } = useI18n();
+  const dateLocale = locale === "pt" ? pt : enUS;
+
   if (items.length === 0) return null;
 
   return (
     <section aria-labelledby="activity-heading">
       <h2 id="activity-heading" className="text-xl font-bold">
-        Atividade recente
+        {t("publicProfile.recentActivity")}
       </h2>
       <ul className="mt-4 space-y-2">
         {items.map((item) => (
@@ -23,7 +29,7 @@ export function PublicActivity({ items }: { items: ProfileActivityItem[] }) {
             >
               {formatDistanceToNow(new Date(item.createdAt), {
                 addSuffix: true,
-                locale: pt,
+                locale: dateLocale,
               })}
             </time>
           </li>

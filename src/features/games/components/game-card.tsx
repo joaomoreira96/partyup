@@ -1,13 +1,18 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Users } from "lucide-react";
 import { CompatibilityBadges } from "@/features/games/components/compatibility-badges";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { GameRecord } from "@/types/platform";
 
 export function GameCard({ game }: { game: GameRecord }) {
+  const { t } = useI18n();
+
   return (
     <article
       className={cn(
@@ -32,7 +37,7 @@ export function GameCard({ game }: { game: GameRecord }) {
             className="absolute left-3 top-3 gap-1 border-0 bg-accent text-accent-foreground"
           >
             <Star className="size-3" aria-hidden />
-            Destaque
+            {t("games.featured")}
           </Badge>
         )}
         <span className="sr-only">{game.name}</span>
@@ -66,13 +71,13 @@ export function GameCard({ game }: { game: GameRecord }) {
         {game.supports_multiplayer ? (
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Users className="size-3.5" aria-hidden />
-            Multiplayer
+            {t("games.multiplayer")}
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground">Single player</span>
+          <span className="text-xs text-muted-foreground">{t("games.singlePlayer")}</span>
         )}
         <Button size="sm" asChild>
-          <Link href={`/games/${game.slug}/play`}>Jogar</Link>
+          <Link href={`/games/${game.slug}/play`}>{t("common.play")}</Link>
         </Button>
       </div>
     </article>

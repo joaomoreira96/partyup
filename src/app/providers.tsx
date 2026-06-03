@@ -1,9 +1,17 @@
 "use client";
 
 import { ThemeProvider } from "next-themes";
+import { LocaleProvider } from "@/features/i18n/locale-provider";
 import { UserProvider } from "@/features/auth/components/user-provider";
+import type { Locale } from "@/i18n/config";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  locale,
+}: {
+  children: React.ReactNode;
+  locale: Locale;
+}) {
   return (
     <ThemeProvider
       attribute="class"
@@ -12,7 +20,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       storageKey="partyup-theme"
       disableTransitionOnChange
     >
-      <UserProvider>{children}</UserProvider>
+      <LocaleProvider initialLocale={locale}>
+        <UserProvider>{children}</UserProvider>
+      </LocaleProvider>
     </ThemeProvider>
   );
 }

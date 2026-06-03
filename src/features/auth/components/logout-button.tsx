@@ -5,6 +5,7 @@ import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/use-user";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { Button } from "@/components/ui/button";
 
 export function LogoutButton({
@@ -16,19 +17,20 @@ export function LogoutButton({
 }) {
   const router = useRouter();
   const { refresh } = useUser();
+  const { t } = useI18n();
 
   async function handleLogout() {
     const supabase = createClient();
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast.error("Não foi possível terminar sessão.");
+      toast.error(t("auth.logoutError"));
       return;
     }
     await refresh();
     onDone?.();
     router.push("/");
     router.refresh();
-    toast.success("Sessão terminada.");
+    toast.success(t("auth.logoutSuccess"));
   }
 
   return (
@@ -39,7 +41,7 @@ export function LogoutButton({
       onClick={() => void handleLogout()}
     >
       <LogOut className="size-4" aria-hidden />
-      <span>Sair</span>
+      <span>{t("nav.logout")}</span>
     </Button>
   );
 }

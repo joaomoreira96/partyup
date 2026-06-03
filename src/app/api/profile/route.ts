@@ -60,7 +60,13 @@ export async function PATCH(request: Request) {
     const username = normalizeUsername(parsed.data.username);
     const check = validateUsername(username);
     if (!check.ok) {
-      return NextResponse.json({ message: check.message }, { status: 400 });
+      const messages: Record<typeof check.code, string> = {
+        empty: "Indica uma tag de jogador.",
+        tooShort: "A tag deve ter pelo menos 3 caracteres.",
+        tooLong: "A tag pode ter no máximo 20 caracteres.",
+        invalid: "Usa apenas letras minúsculas, números e underscore (_).",
+      };
+      return NextResponse.json({ message: messages[check.code] }, { status: 400 });
     }
 
     const available = await isUsernameAvailable(username, user.id);

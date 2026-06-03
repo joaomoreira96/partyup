@@ -8,6 +8,7 @@ import { createPartyUpSDK, PartyUpSdkError } from "@/lib/partyup-sdk";
 import { getGuestId, getGuestName } from "@/lib/guest";
 import { getMaxScoreForModule, getMetricForGame } from "@/lib/games/metrics";
 import type { GameRecord } from "@/types/platform";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,20 +29,24 @@ export function GamePlayer({
   isGuest,
   roomCode,
 }: GamePlayerProps) {
+  const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [guestName, setGuestNameState] = useState("Convidado");
+  const [guestName, setGuestNameState] = useState(() => t("common.guest"));
   const [error, setError] = useState<string | null>(null);
   const [statusHint, setStatusHint] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const displayName = userDisplayName ?? guestName;
 
-  const showFriendlyError = useCallback((err: unknown) => {
-    if (err instanceof PartyUpSdkError) {
-      setError(err.userMessage);
-    } else {
-      setError("Não foi possível carregar o jogo. Tenta novamente.");
-    }
-  }, []);
+  const showFriendlyError = useCallback(
+    (err: unknown) => {
+      if (err instanceof PartyUpSdkError) {
+        setError(err.userMessage);
+      } else {
+        setError(t("games.loadError"));
+      }
+    },
+    [t]
+  );
 
   useEffect(() => {
     if (isGuest) setGuestNameState(getGuestName());
@@ -57,7 +62,7 @@ export function GamePlayer({
 
       const module = await loadGameModule(game.module_id);
       if (!module || !containerRef.current || !mounted) {
-        setError("Este jogo não está disponível de momento.");
+        setError(t("games.unavailable"));
         setLoading(false);
         return;
       }
@@ -77,7 +82,7 @@ export function GamePlayer({
           ? { code: roomCode, status: "playing", players: [] }
           : undefined,
         onScoreUpdate: (score) => {
-          setStatusHint(`Pontuação: ${Math.round(score)}`);
+          setStatusHint(t("games.scoreHint", { score: Math.round(score) }));
         },
         onLifecycleChange: (state) => {
           if (state === "PLAYING") setStatusHint(null);
@@ -122,14 +127,15 @@ export function GamePlayer({
     isGuest,
     roomCode,
     showFriendlyError,
+    t,
   ]);
 
   if (!game.guest_allowed && isGuest) {
     return (
       <div className="party-card p-6 text-center">
-        <p className="mb-4 text-muted-foreground">Este jogo requer conta.</p>
+        <p className="mb-4 text-muted-foreground">{t("games.play.requiresAccount")}</p>
         <Button asChild>
-          <Link href="/register">Criar conta grátis</Link>
+          <Link href="/register">{t("games.play.createAccount")}</Link>
         </Button>
       </div>
     );
@@ -140,19 +146,19 @@ export function GamePlayer({
       {isGuest && (
         <div className="party-card flex flex-col gap-2 p-4 sm:flex-row sm:items-end">
           <div className="flex-1 space-y-2">
-            <Label htmlFor="guest-name">Nome no jogo</Label>
+            <Label htmlFor="guest-name">{t("games.play.guestName")}</Label>
             <Input
               id="guest-name"
               defaultValue={guestName}
               onBlur={(e) => {
-                const name = e.target.value || "Convidado";
+                const name = e.target.value || t("common.guest");
                 localStorage.setItem("partyup_guest_name", name);
                 setGuestNameState(name);
               }}
             />
           </div>
           <p className="text-xs text-muted-foreground sm:max-w-xs">
-            Modo convidado — sem rankings oficiais.
+            {t("games.play.guestHint")}
           </p>
         </div>
       )}
@@ -172,12 +178,12 @@ export function GamePlayer({
           <p className="text-sm text-destructive">{error}</p>
         </div>
       ) : loading ? (
-        <LoadingState label="A carregar jogo..." />
+        <LoadingState label={t("games.play.loading")} />
       ) : (
         <div
           ref={containerRef}
           className="w-full rounded-[var(--radius-premium)] border border-border bg-card p-4"
-          aria-label={`Área de jogo: ${game.name}`}
+          aria-label={t("games.play.areaLabel", { name: game.name })}
         />
       )}
     </div>

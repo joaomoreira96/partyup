@@ -7,6 +7,7 @@ import { CompatibilityBadges } from "@/features/games/components/compatibility-b
 import { GameStatsPanel } from "@/features/games/components/game-stats-panel";
 import { CreateRoomButton } from "@/features/rooms/components/create-room-button";
 import { buildGameMetadata } from "@/lib/seo/metadata";
+import { getServerI18n } from "@/i18n/get-server-i18n";
 import { getGameBySlug, getGameStats } from "@/services/game.service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,13 +18,15 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
+  const { t } = await getServerI18n();
   const game = await getGameBySlug(slug);
-  if (!game) return { title: "Jogo" };
+  if (!game) return { title: t("games.metadataGame") };
   return buildGameMetadata(game);
 }
 
 export default async function GameDetailPage({ params }: PageProps) {
   const { slug } = await params;
+  const { t } = await getServerI18n();
   const game = await getGameBySlug(slug);
   if (!game) notFound();
 
@@ -62,7 +65,7 @@ export default async function GameDetailPage({ params }: PageProps) {
 
         <aside className="flex flex-col gap-3 rounded-xl border bg-card p-6 lg:sticky lg:top-24 lg:self-start">
           <Button size="lg" asChild>
-            <Link href={`/games/${game.slug}/play`}>Jogar</Link>
+            <Link href={`/games/${game.slug}/play`}>{t("common.play")}</Link>
           </Button>
           <CreateRoomButton
             gameSlug={game.slug}
@@ -71,7 +74,7 @@ export default async function GameDetailPage({ params }: PageProps) {
           <Button variant="outline" asChild>
             <Link href={`/rankings/${game.slug}`}>
               <Trophy className="size-4" aria-hidden />
-              Ranking
+              {t("games.detail.leaderboard")}
             </Link>
           </Button>
         </aside>

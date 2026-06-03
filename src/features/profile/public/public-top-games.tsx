@@ -1,16 +1,21 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useI18n } from "@/features/i18n/locale-provider";
 import {
   formatPlayTimeHours,
   formatRecordScore,
-} from "@/services/public-profile.service";
+} from "@/lib/profile/public-display";
 import type { TopGameStat } from "@/types/platform";
 
 export function PublicTopGames({ games }: { games: TopGameStat[] }) {
+  const { t, locale } = useI18n();
+
   if (games.length === 0) {
     return (
       <section className="party-card p-6 text-center text-sm text-muted-foreground">
-        Ainda sem jogos registados.
+        {t("publicProfile.noGames")}
       </section>
     );
   }
@@ -18,7 +23,7 @@ export function PublicTopGames({ games }: { games: TopGameStat[] }) {
   return (
     <section aria-labelledby="top-games-heading">
       <h2 id="top-games-heading" className="text-xl font-bold">
-        Top jogos
+        {t("publicProfile.topGames")}
       </h2>
       <ul className="mt-4 space-y-3">
         {games.map((game) => (
@@ -46,19 +51,19 @@ export function PublicTopGames({ games }: { games: TopGameStat[] }) {
                 <p className="font-semibold">{game.name}</p>
                 <dl className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
                   <div>
-                    <dt>Partidas</dt>
+                    <dt>{t("publicProfile.sessions")}</dt>
                     <dd className="font-semibold text-foreground tabular-nums">
                       {game.sessions}
                     </dd>
                   </div>
                   <div>
-                    <dt>Tempo</dt>
+                    <dt>{t("publicProfile.time")}</dt>
                     <dd className="font-semibold text-foreground">
-                      {formatPlayTimeHours(game.playTimeSeconds)}
+                      {formatPlayTimeHours(game.playTimeSeconds, locale)}
                     </dd>
                   </div>
                   <div>
-                    <dt>Melhor</dt>
+                    <dt>{t("publicProfile.best")}</dt>
                     <dd className="font-semibold text-foreground tabular-nums">
                       {game.bestScore > 0
                         ? formatRecordScore(game.bestScore, game.metric)

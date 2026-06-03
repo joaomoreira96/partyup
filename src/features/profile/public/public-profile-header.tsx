@@ -1,8 +1,9 @@
+"use client";
+
 import { Calendar, MapPin } from "lucide-react";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  formatMemberSince,
-} from "@/services/public-profile.service";
+import { formatMemberSince } from "@/lib/profile/public-display";
 import type { Profile } from "@/types/platform";
 
 function initials(name: string) {
@@ -21,7 +22,8 @@ export function PublicProfileHeader({
   profile: Profile;
   showCountry: boolean;
 }) {
-  const memberSince = formatMemberSince(profile.created_at);
+  const { t, locale } = useI18n();
+  const memberSince = formatMemberSince(profile.created_at, locale);
 
   return (
     <header className="party-card flex flex-col items-center gap-6 p-6 sm:flex-row sm:items-start sm:p-8">
@@ -47,7 +49,7 @@ export function PublicProfileHeader({
           ) : null}
           <li className="flex items-center gap-1.5">
             <Calendar className="size-3.5 shrink-0" aria-hidden />
-            Membro desde {memberSince}
+            {t("publicProfile.memberSince", { date: memberSince })}
           </li>
         </ul>
 

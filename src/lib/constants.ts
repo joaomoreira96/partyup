@@ -12,7 +12,7 @@ export const FEATURED_GAME_SLUGS = [
 ] as const;
 
 export const NAV_LINKS = [
-  { href: "/games", label: "Jogos" },
-  { href: "/rankings", label: "Rankings" },
-  { href: "/profile", label: "Perfil" },
+  { href: "/games", key: "nav.games" },
+  { href: "/rankings", key: "nav.rankings" },
+  { href: "/profile", key: "nav.profile" },
 ] as const;

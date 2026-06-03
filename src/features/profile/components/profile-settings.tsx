@@ -20,6 +20,7 @@ import {
   validateUsername,
 } from "@/lib/profile/username";
 import { useUser } from "@/hooks/use-user";
+import { useI18n } from "@/features/i18n/locale-provider";
 import type { Profile } from "@/types/platform";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ function initials(name: string) {
 
 export function ProfileSettings({ profile }: { profile: Profile }) {
   const { refresh } = useUser();
+  const { t } = useI18n();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [displayName, setDisplayName] = useState(profile.display_name ?? "");
@@ -60,18 +62,18 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
     const tagCheck = validateUsername(tag);
 
     if (!displayName.trim()) {
-      toast.error("Indica um nome a mostrar.");
+      toast.error(t("profile.settings.toasts.displayNameRequired"));
       return;
     }
 
     const needsTag = !profile.username;
     if (needsTag && !tag) {
-      toast.error("Define a tua tag de jogador.");
+      toast.error(t("profile.settings.toasts.tagRequired"));
       return;
     }
 
     if (tag && !tagCheck.ok) {
-      toast.error(tagCheck.message);
+      toast.error(t(`profile.usernameErrors.${tagCheck.code}`));
       return;
     }
 
@@ -82,14 +84,14 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Sessão expirada. Entra novamente.");
+        toast.error(t("profile.settings.toasts.sessionExpired"));
         return;
       }
 
       if (tag && tag !== (profile.username ?? "")) {
         const available = await isUsernameAvailableClient(tag, user.id);
         if (!available) {
-          toast.error("Esta tag já está a ser usada. Escolhe outra.");
+          toast.error(t("profile.settings.toasts.tagTaken"));
           return;
         }
       }
@@ -112,10 +114,10 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
         return;
       }
 
-      toast.success("Perfil atualizado.");
+      toast.success(t("profile.settings.toasts.profileUpdated"));
       await refresh();
     } catch {
-      toast.error("Erro de ligação. Tenta novamente.");
+      toast.error(t("profile.settings.toasts.connectionError"));
     } finally {
       setSavingProfile(false);
     }
@@ -130,7 +132,7 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
         toast.error(result.message);
         return;
       }
-      toast.success("Avatar atualizado.");
+      toast.success(t("profile.settings.toasts.avatarUpdated"));
       await refresh();
     } finally {
       setSavingProfile(false);
@@ -152,7 +154,7 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        toast.error("Sessão expirada. Entra novamente.");
+        toast.error(t("profile.settings.toasts.sessionExpired"));
         return;
       }
 
@@ -185,10 +187,10 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
       }
 
       setAvatarUrl(cacheBusted);
-      toast.success("Foto de perfil atualizada.");
+      toast.success(t("profile.settings.toasts.photoUpdated"));
       await refresh();
     } catch {
-      toast.error("Erro ao enviar imagem.");
+      toast.error(t("profile.settings.toasts.uploadError"));
     } finally {
       setUploadingAvatar(false);
     }
@@ -196,11 +198,11 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
 
   async function changePassword() {
     if (newPassword.length < 6) {
-      toast.error("A palavra-passe deve ter pelo menos 6 caracteres.");
+      toast.error(t("profile.settings.toasts.passwordMin"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("As palavras-passe não coincidem.");
+      toast.error(t("profile.settings.toasts.passwordMismatch"));
       return;
     }
 
@@ -211,12 +213,12 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
       if (error) {
         toast.error(
           error.message.includes("same")
-            ? "Escolhe uma palavra-passe diferente da atual."
-            : "Não foi possível alterar a palavra-passe."
+            ? t("profile.settings.toasts.passwordSame")
+            : t("profile.settings.toasts.passwordChangeFailed")
         );
         return;
       }
-      toast.success("Palavra-passe alterada.");
+      toast.success(t("profile.settings.toasts.passwordChanged"));
       setNewPassword("");
       setConfirmPassword("");
     } finally {
@@ -229,10 +231,10 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
   return (
     <section className="party-card mt-8 p-6" aria-labelledby="profile-settings-title">
       <h2 id="profile-settings-title" className="text-lg font-semibold">
-        Definições da conta
+        {t("profile.settings.title")}
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Tag, avatar e segurança. A tag é única e aparece nos rankings e salas.
+        {t("profile.settings.subtitle")}
       </p>
 
       {profile.username ? (
@@ -241,16 +243,16 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
             href={`/players/${profile.username}`}
             className="font-medium text-primary hover:underline"
           >
-            Ver perfil público →
+            {t("profile.settings.viewPublic")}
           </Link>
         </p>
       ) : null}
 
       <Tabs defaultValue="perfil" className="mt-6">
         <TabsList className="w-full flex-wrap sm:w-auto">
-          <TabsTrigger value="perfil">Perfil</TabsTrigger>
-          <TabsTrigger value="privacidade">Privacidade</TabsTrigger>
-          <TabsTrigger value="seguranca">Segurança</TabsTrigger>
+          <TabsTrigger value="perfil">{t("profile.settings.tabProfile")}</TabsTrigger>
+          <TabsTrigger value="privacidade">{t("profile.settings.tabPrivacy")}</TabsTrigger>
+          <TabsTrigger value="seguranca">{t("profile.settings.tabSecurity")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="perfil" className="mt-6 space-y-6">
@@ -285,14 +287,14 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
                 ) : (
                   <Camera className="size-4" aria-hidden />
                 )}
-                Enviar foto
+                {t("profile.settings.uploadPhoto")}
               </Button>
-              <p className="text-xs text-muted-foreground">JPG, PNG, WebP ou GIF — máx. 2 MB</p>
+              <p className="text-xs text-muted-foreground">{t("profile.settings.uploadHint")}</p>
             </div>
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium">Avatares rápidos</p>
+            <p className="mb-2 text-sm font-medium">{t("profile.settings.quickAvatars")}</p>
             <div className="flex flex-wrap gap-2">
               {AVATAR_PRESETS.map((preset) => (
                 <button
@@ -319,7 +321,7 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="profile-display-name">Nome a mostrar</Label>
+            <Label htmlFor="profile-display-name">{t("profile.settings.displayName")}</Label>
             <Input
               id="profile-display-name"
               value={displayName}
@@ -330,48 +332,48 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="profile-bio">Bio</Label>
+            <Label htmlFor="profile-bio">{t("profile.settings.bio")}</Label>
             <textarea
               id="profile-bio"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               maxLength={280}
               rows={3}
-              placeholder="Uma frase sobre ti como jogador..."
+              placeholder={t("profile.settings.bioPlaceholder")}
               className="flex w-full rounded-[var(--radius-md)] border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="profile-country">País (opcional)</Label>
+            <Label htmlFor="profile-country">{t("profile.settings.country")}</Label>
             <Input
               id="profile-country"
               value={country}
               onChange={(e) => setCountry(e.target.value)}
               maxLength={60}
-              placeholder="Portugal"
+              placeholder={t("profile.settings.countryPlaceholder")}
               autoComplete="country-name"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="profile-username">Tag de jogador</Label>
+            <Label htmlFor="profile-username">{t("profile.settings.playerTag")}</Label>
             <div className="flex items-center gap-1">
               <span className="text-muted-foreground">@</span>
               <Input
                 id="profile-username"
                 value={username}
                 onChange={(e) => setUsername(normalizeUsername(e.target.value))}
-                placeholder="ex: party_hero"
+                placeholder={t("profile.settings.tagPlaceholder")}
                 maxLength={20}
                 autoComplete="username"
                 spellCheck={false}
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Pré-visualização:{" "}
+              {t("profile.settings.tagPreview")}{" "}
               <span className="font-medium text-foreground">@{tagPreview}</span>
-              {!profile.username && " — ainda não definida na conta"}
+              {!profile.username && t("profile.settings.tagNotSet")}
             </p>
           </div>
 
@@ -383,23 +385,23 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
             {savingProfile ? (
               <>
                 <Loader2 className="size-4 animate-spin" aria-hidden />
-                A guardar...
+                {t("profile.settings.saving")}
               </>
             ) : (
-              "Guardar perfil"
+              t("profile.settings.saveProfile")
             )}
           </Button>
         </TabsContent>
 
         <TabsContent value="privacidade" className="mt-6 space-y-6">
           <p className="text-sm text-muted-foreground">
-            Controla o que outros jogadores veem em{" "}
+            {t("profile.settings.privacyIntro")}{" "}
             {profile.username ? (
               <Link href={`/players/${profile.username}`} className="text-primary hover:underline">
                 /players/{profile.username}
               </Link>
             ) : (
-              "o teu perfil público"
+              t("profile.settings.privacyPublicPath")
             )}
             .
           </p>
@@ -413,9 +415,9 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
                 className="mt-1 size-4 rounded border-input"
               />
               <label htmlFor="public-profile" className="text-sm leading-snug">
-                <span className="font-medium">Perfil público</span>
+                <span className="font-medium">{t("profile.settings.publicProfile")}</span>
                 <span className="block text-muted-foreground">
-                  Se desativado, outros utilizadores não encontram o teu perfil.
+                  {t("profile.settings.publicProfileHint")}
                 </span>
               </label>
             </li>
@@ -428,9 +430,9 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
                 className="mt-1 size-4 rounded border-input"
               />
               <label htmlFor="show-activity" className="text-sm leading-snug">
-                <span className="font-medium">Mostrar atividade recente</span>
+                <span className="font-medium">{t("profile.settings.showActivity")}</span>
                 <span className="block text-muted-foreground">
-                  Partidas e conquistas recentes no perfil público.
+                  {t("profile.settings.showActivityHint")}
                 </span>
               </label>
             </li>
@@ -443,9 +445,9 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
                 className="mt-1 size-4 rounded border-input"
               />
               <label htmlFor="show-country" className="text-sm leading-snug">
-                <span className="font-medium">Mostrar país</span>
+                <span className="font-medium">{t("profile.settings.showCountry")}</span>
                 <span className="block text-muted-foreground">
-                  Exibe o país no cabeçalho do perfil.
+                  {t("profile.settings.showCountryHint")}
                 </span>
               </label>
             </li>
@@ -455,16 +457,16 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
             disabled={savingProfile}
             onClick={() => void saveProfile()}
           >
-            Guardar privacidade
+            {t("profile.settings.savePrivacy")}
           </Button>
         </TabsContent>
 
         <TabsContent value="seguranca" className="mt-6 space-y-4">
           <p className="text-sm text-muted-foreground">
-            Altera a palavra-passe da tua conta PartyUp (Supabase Auth).
+            {t("profile.settings.securityHintSupabase")}
           </p>
           <div className="space-y-2">
-            <Label htmlFor="new-password">Nova palavra-passe</Label>
+            <Label htmlFor="new-password">{t("profile.settings.newPassword")}</Label>
             <Input
               id="new-password"
               type="password"
@@ -475,7 +477,7 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirmar palavra-passe</Label>
+            <Label htmlFor="confirm-password">{t("profile.settings.confirmPassword")}</Label>
             <Input
               id="confirm-password"
               type="password"
@@ -491,7 +493,9 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
             disabled={savingPassword}
             onClick={() => void changePassword()}
           >
-            {savingPassword ? "A guardar..." : "Alterar palavra-passe"}
+            {savingPassword
+              ? t("profile.settings.saving")
+              : t("profile.settings.changePassword")}
           </Button>
         </TabsContent>
       </Tabs>

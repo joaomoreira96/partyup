@@ -1,5 +1,8 @@
+"use client";
+
 import type { ComponentType } from "react";
 import { Medal, Star, Trophy, Users } from "lucide-react";
+import { useI18n } from "@/features/i18n/locale-provider";
 import type { Achievement } from "@/types/platform";
 import { cn } from "@/lib/utils";
 
@@ -15,10 +18,13 @@ export function AchievementsGrid({
 }: {
   achievements: Achievement[];
 }) {
+  const { t, locale } = useI18n();
+  const dateLocale = locale === "pt" ? "pt-PT" : "en-US";
+
   return (
     <section aria-labelledby="achievements-heading" className="mt-10">
       <h2 id="achievements-heading" className="text-xl font-bold">
-        Conquistas
+        {t("profile.achievements")}
       </h2>
       <ul className="mt-4 grid gap-3 sm:grid-cols-2">
         {achievements.map((a) => {
@@ -50,8 +56,9 @@ export function AchievementsGrid({
                 <p className="text-sm text-muted-foreground">{a.description}</p>
                 {unlocked && a.unlocked_at && (
                   <p className="mt-1 text-xs text-success">
-                    Desbloqueada em{" "}
-                    {new Date(a.unlocked_at).toLocaleDateString("pt-PT")}
+                    {t("profile.unlockedAt", {
+                      date: new Date(a.unlocked_at).toLocaleDateString(dateLocale),
+                    })}
                   </p>
                 )}
               </div>

@@ -1,11 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { SectionHeading } from "@/components/design/section-heading";
+import { useI18n } from "@/features/i18n/locale-provider";
 import type { Category } from "@/types/platform";
 
 export function CategoriesSection({ categories }: { categories: Category[] }) {
+  const { t } = useI18n();
+
   return (
     <section className="party-section" aria-labelledby="categories-heading">
-      <SectionHeading id="categories-heading" title="Categorias" />
+      <SectionHeading id="categories-heading" title={t("home.categoriesTitle")} />
       <ul className="flex flex-wrap gap-3">
         {categories.map((cat) => (
           <li key={cat.slug}>

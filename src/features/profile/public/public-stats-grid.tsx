@@ -1,5 +1,8 @@
+"use client";
+
 import { Clock, Gamepad2, Star, Trophy } from "lucide-react";
-import { formatPlayTimeHours } from "@/services/public-profile.service";
+import { useI18n } from "@/features/i18n/locale-provider";
+import { formatPlayTimeHours } from "@/lib/profile/public-display";
 import type { UserStats } from "@/types/platform";
 
 export function PublicStatsGrid({
@@ -9,25 +12,28 @@ export function PublicStatsGrid({
   stats: UserStats;
   achievementCount: number;
 }) {
+  const { t, locale } = useI18n();
+  const numberLocale = locale === "pt" ? "pt-PT" : "en-US";
+
   const items = [
     {
-      label: "Jogos jogados",
-      value: stats.total_games_played.toLocaleString("pt-PT"),
+      label: t("publicProfile.stats.gamesPlayed"),
+      value: stats.total_games_played.toLocaleString(numberLocale),
       icon: Gamepad2,
     },
     {
-      label: "Tempo total",
-      value: formatPlayTimeHours(stats.total_play_time_seconds),
+      label: t("publicProfile.stats.totalTime"),
+      value: formatPlayTimeHours(stats.total_play_time_seconds, locale),
       icon: Clock,
     },
     {
-      label: "Pontuação total",
-      value: Math.round(stats.total_score).toLocaleString("pt-PT"),
+      label: t("publicProfile.stats.totalScore"),
+      value: Math.round(stats.total_score).toLocaleString(numberLocale),
       icon: Star,
     },
     {
-      label: "Conquistas",
-      value: achievementCount.toLocaleString("pt-PT"),
+      label: t("publicProfile.stats.achievements"),
+      value: achievementCount.toLocaleString(numberLocale),
       icon: Trophy,
     },
   ];
@@ -35,7 +41,7 @@ export function PublicStatsGrid({
   return (
     <section aria-labelledby="public-stats-heading">
       <h2 id="public-stats-heading" className="sr-only">
-        Estatísticas gerais
+        {t("publicProfile.statsHeading")}
       </h2>
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {items.map(({ label, value, icon: Icon }) => (

@@ -1,7 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { SectionHeading } from "@/components/design/section-heading";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { formatScoreForMetric } from "@/lib/games/types";
 import type { RankingPreview } from "@/services/ranking.service";
 
@@ -10,18 +13,18 @@ export function RankingsPreviewSection({
 }: {
   previews: RankingPreview[];
 }) {
+  const { t } = useI18n();
+
   return (
     <section className="party-section" aria-labelledby="rankings-preview-heading">
       <SectionHeading
         id="rankings-preview-heading"
-        title="Rankings"
-        actionLabel="Ver rankings"
+        title={t("home.rankingsTitle")}
+        actionLabel={t("home.rankingsAction")}
         actionHref="/rankings"
       />
       {previews.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Ainda sem pontuações — sê o primeiro!
-        </p>
+        <p className="text-sm text-muted-foreground">{t("home.rankingsEmpty")}</p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
           {previews.map(({ game, topEntry, metric }) => (
@@ -44,13 +47,17 @@ export function RankingsPreviewSection({
                   <p className="font-semibold truncate">{game.name}</p>
                   {topEntry ? (
                     <p className="text-sm text-muted-foreground">
-                      Líder: {topEntry.profile?.display_name ?? "Jogador"} —{" "}
+                      {t("home.rankingsLeader", {
+                        name: topEntry.profile?.display_name ?? t("common.player"),
+                      })}{" "}
                       <span className="font-mono text-primary">
                         {formatScoreForMetric(topEntry.score, metric)}
                       </span>
                     </p>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Sem líder</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("home.rankingsNoLeader")}
+                    </p>
                   )}
                 </div>
                 <Trophy className="size-5 shrink-0 text-accent" aria-hidden />

@@ -1,7 +1,6 @@
-import { format } from "date-fns";
-import { pt } from "date-fns/locale";
+import "server-only";
+
 import { getMetricForGame } from "@/lib/games/metrics";
-import { formatScoreForMetric } from "@/lib/games/types";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { getSessionUser } from "@/services/auth.service";
@@ -47,17 +46,6 @@ function pickGame<T extends { slug: string; name: string }>(
   raw: T | T[] | null | undefined
 ): T | null {
   return pickOne(raw);
-}
-
-export function formatMemberSince(createdAt: string): string {
-  return format(new Date(createdAt), "MMM yyyy", { locale: pt });
-}
-
-export function formatPlayTimeHours(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  if (hours >= 1) return `${hours} ${hours === 1 ? "Hora" : "Horas"}`;
-  const minutes = Math.max(1, Math.round(seconds / 60));
-  return `${minutes} min`;
 }
 
 async function getProfileByUsername(username: string): Promise<Profile | null> {
@@ -349,6 +337,3 @@ export async function getPublicPlayerProfile(
   };
 }
 
-export function formatRecordScore(score: number, metric: LeaderboardMetric): string {
-  return formatScoreForMetric(score, metric);
-}

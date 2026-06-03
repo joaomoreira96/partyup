@@ -11,20 +11,15 @@ import {
   validateUsername,
 } from "@/lib/profile/username";
 import { useUser } from "@/hooks/use-user";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-function mapAuthError(message: string): string {
-  if (message.includes("Invalid login")) return "Email ou palavra-passe incorretos.";
-  if (message.includes("already registered")) return "Este email já está registado.";
-  if (message.includes("Password")) return "A palavra-passe deve ter pelo menos 6 caracteres.";
-  return "Não foi possível concluir o pedido. Verifica os dados e tenta novamente.";
-}
-
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const { refresh } = useUser();
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -32,12 +27,19 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  function mapAuthError(message: string): string {
+    if (message.includes("Invalid login")) return t("auth.errors.invalidLogin");
+    if (message.includes("already registered")) return t("auth.errors.alreadyRegistered");
+    if (message.includes("Password")) return t("auth.errors.passwordMin");
+    return t("auth.errors.generic");
+  }
+
   if (!isSupabaseConfigured()) {
     return (
       <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-        <p>Autenticação indisponível. Configura o Supabase em .env.local.</p>
+        <p>{t("auth.unavailable")}</p>
         <Button variant="link" asChild className="mt-2">
-          <Link href="/">Voltar ao início</Link>
+          <Link href="/">{t("auth.backHome")}</Link>
         </Button>
       </div>
     );
@@ -59,7 +61,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       const username = normalizeUsername(tagRaw);
       const tagCheck = validateUsername(username);
       if (!tagCheck.ok) {
-        setError(tagCheck.message);
+        setError(t(`auth.usernameErrors.${tagCheck.code}`));
         setLoading(false);
         return;
       }
@@ -102,7 +104,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       {mode === "register" && (
         <>
           <div className="space-y-2">
-            <Label htmlFor="display-name">Nome a mostrar</Label>
+            <Label htmlFor="display-name">{t("auth.displayName")}</Label>
             <Input
               id="display-name"
               autoComplete="nickname"
@@ -111,28 +113,25 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="player-tag">Tag de jogador</Label>
+            <Label htmlFor="player-tag">{t("auth.playerTag")}</Label>
             <div className="flex items-center gap-1">
               <span className="text-muted-foreground">@</span>
               <Input
                 id="player-tag"
                 autoComplete="username"
-                placeholder="ex: party_hero"
+                placeholder={t("profile.settings.tagPlaceholder")}
                 value={playerTag}
                 onChange={(e) => setPlayerTag(normalizeUsername(e.target.value))}
                 maxLength={20}
                 spellCheck={false}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              Letras minúsculas, números e _. Se deixares vazio, geramos uma tag
-              a partir do teu nome.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("auth.tagAutoHint")}</p>
           </div>
         </>
       )}
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("auth.email")}</Label>
         <Input
           id="email"
           type="email"
@@ -143,7 +142,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Palavra-passe</Label>
+        <Label htmlFor="password">{t("auth.password")}</Label>
         <Input
           id="password"
           type="password"
@@ -160,7 +159,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </p>
       )}
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "A processar..." : mode === "register" ? "Criar conta" : "Entrar"}
+        {loading
+          ? t("auth.processing")
+          : mode === "register"
+            ? t("auth.registerCta")
+            : t("auth.loginCta")}
       </Button>
     </form>
   );

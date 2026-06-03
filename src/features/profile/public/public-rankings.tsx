@@ -1,13 +1,18 @@
+"use client";
+
 import Link from "next/link";
+import { useI18n } from "@/features/i18n/locale-provider";
 import type { ActiveRanking } from "@/types/platform";
 
 export function PublicRankings({ rankings }: { rankings: ActiveRanking[] }) {
+  const { t } = useI18n();
+
   if (rankings.length === 0) return null;
 
   return (
     <section aria-labelledby="rankings-heading">
       <h2 id="rankings-heading" className="text-xl font-bold">
-        Rankings ativos
+        {t("publicProfile.activeRankings")}
       </h2>
       <ul className="mt-4 flex flex-wrap gap-2">
         {rankings.map((r) => (

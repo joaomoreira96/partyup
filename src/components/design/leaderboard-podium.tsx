@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Medal, Trophy } from "lucide-react";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { formatScoreForMetric } from "@/lib/games/types";
 import type { LeaderboardEntry, LeaderboardMetric } from "@/types/platform";
 import { cn } from "@/lib/utils";
@@ -11,7 +14,8 @@ const PODIUM = [
 ] as const;
 
 function PlayerName({ entry }: { entry: LeaderboardEntry }) {
-  const name = entry.profile?.display_name ?? entry.profile?.username ?? "Jogador";
+  const { t } = useI18n();
+  const name = entry.profile?.display_name ?? entry.profile?.username ?? t("common.player");
   if (entry.profile?.username) {
     return (
       <Link
@@ -32,6 +36,8 @@ export function LeaderboardPodium({
   entries: LeaderboardEntry[];
   metric: LeaderboardMetric;
 }) {
+  const { t } = useI18n();
+
   if (entries.length < 1) return null;
 
   const ordered = [
@@ -44,7 +50,7 @@ export function LeaderboardPodium({
     <div
       className="mb-8 grid grid-cols-3 items-end gap-3 sm:gap-4"
       role="list"
-      aria-label="Top 3"
+      aria-label={t("rankings.top3")}
     >
       {PODIUM.map((slot, i) => {
         const entry = ordered[i];
@@ -83,7 +89,7 @@ export function LeaderboardPodium({
               )}
             </div>
             <span className="text-xs font-semibold text-muted-foreground">
-              {slot.place}º lugar
+              {t("rankings.place", { place: slot.place })}
             </span>
             <div className="mt-1 w-full">
               <PlayerName entry={entry} />

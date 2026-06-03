@@ -1,19 +1,25 @@
+"use client";
+
 import { Monitor, Smartphone, Tablet } from "lucide-react";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { Badge } from "@/components/ui/badge";
 import type { GameRecord } from "@/types/platform";
 import { cn } from "@/lib/utils";
 
-const DEVICES = [
-  { key: "desktop", label: "Desktop", icon: Monitor, onKey: "supports_desktop" as const },
-  { key: "tablet", label: "Tablet", icon: Tablet, onKey: "supports_tablet" as const },
-  { key: "mobile", label: "Mobile", icon: Smartphone, onKey: "supports_mobile" as const },
+const DEVICE_KEYS = [
+  { key: "desktop", labelKey: "compatibility.desktop", icon: Monitor, onKey: "supports_desktop" as const },
+  { key: "tablet", labelKey: "compatibility.tablet", icon: Tablet, onKey: "supports_tablet" as const },
+  { key: "mobile", labelKey: "compatibility.mobile", icon: Smartphone, onKey: "supports_mobile" as const },
 ];
 
 export function CompatibilityBadges({ game }: { game: GameRecord }) {
+  const { t } = useI18n();
+
   return (
-    <ul className="flex flex-wrap gap-1.5" aria-label="Compatibilidade">
-      {DEVICES.map(({ key, label, icon: Icon, onKey }) => {
+    <ul className="flex flex-wrap gap-1.5" aria-label={t("games.detail.compatibility")}>
+      {DEVICE_KEYS.map(({ key, labelKey, icon: Icon, onKey }) => {
         const on = game[onKey];
+        const label = t(labelKey);
         return (
           <li key={key}>
             <Badge

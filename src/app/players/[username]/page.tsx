@@ -9,6 +9,7 @@ import { PublicRecords } from "@/features/profile/public/public-records";
 import { PublicStatsGrid } from "@/features/profile/public/public-stats-grid";
 import { PublicTopGames } from "@/features/profile/public/public-top-games";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { getServerI18n } from "@/i18n/get-server-i18n";
 import { getPublicPlayerProfile } from "@/services/public-profile.service";
 import { Button } from "@/components/ui/button";
 
@@ -18,17 +19,21 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { username } = await params;
+  const { t } = await getServerI18n();
   const data = await getPublicPlayerProfile(username);
-  if (!data) return { title: "Jogador" };
+  if (!data) return { title: t("publicProfile.metadataPlayer") };
   return buildPageMetadata({
     title: `${data.profile.display_name} (@${username})`,
-    description: `Perfil público de ${data.profile.display_name} no PartyUp — estatísticas, recordes e conquistas.`,
+    description: t("publicProfile.metadataDescription", {
+      name: data.profile.display_name,
+    }),
     path: `/players/${username}`,
   });
 }
 
 export default async function PublicPlayerPage({ params }: PageProps) {
   const { username } = await params;
+  const { t } = await getServerI18n();
   const data = await getPublicPlayerProfile(username);
 
   if (!data) notFound();
@@ -43,9 +48,9 @@ export default async function PublicPlayerPage({ params }: PageProps) {
           className="rounded-[var(--radius-md)] border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200"
           role="status"
         >
-          O teu perfil está <strong>privado</strong> — só tu vês esta página.{" "}
+          {t("publicProfile.privateBanner")}{" "}
           <Link href="/profile" className="font-medium underline underline-offset-2">
-            Alterar privacidade
+            {t("publicProfile.changePrivacy")}
           </Link>
         </div>
       ) : null}
@@ -70,7 +75,7 @@ export default async function PublicPlayerPage({ params }: PageProps) {
       {isOwner ? (
         <div className="flex justify-center pt-2">
           <Button variant="secondary" asChild>
-            <Link href="/profile">Editar o meu perfil</Link>
+            <Link href="/profile">{t("profile.editProfile")}</Link>
           </Button>
         </div>
       ) : null}

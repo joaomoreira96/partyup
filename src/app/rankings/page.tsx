@@ -2,23 +2,26 @@ import Link from "next/link";
 import Image from "next/image";
 import { MainShell } from "@/components/layout/main-shell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { getServerI18n } from "@/i18n/get-server-i18n";
 import { getPublishedGames } from "@/services/game.service";
 import { getMetricForGame } from "@/services/ranking.service";
 
-export const metadata = buildPageMetadata({
-  title: "Rankings",
-  path: "/rankings",
-});
+export async function generateMetadata() {
+  const { t } = await getServerI18n();
+  return buildPageMetadata({
+    title: t("rankings.title"),
+    path: "/rankings",
+  });
+}
 
 export default async function RankingsPage() {
+  const { t } = await getServerI18n();
   const games = await getPublishedGames();
 
   return (
     <MainShell>
-      <h1 className="text-3xl font-bold">Rankings</h1>
-      <p className="mt-2 text-muted-foreground">
-        Cada jogo tem o seu ranking independente. Regista-te para participar.
-      </p>
+      <h1 className="text-3xl font-bold">{t("rankings.title")}</h1>
+      <p className="mt-2 text-muted-foreground">{t("rankings.pageDescription")}</p>
 
       <ul className="mt-8 grid gap-4 sm:grid-cols-2">
         {games.map((game) => (
@@ -41,8 +44,8 @@ export default async function RankingsPage() {
                 <p className="font-semibold">{game.name}</p>
                 <p className="text-sm text-muted-foreground">
                   {getMetricForGame(game.module_id) === "time"
-                    ? "Melhor tempo"
-                    : "Melhor pontuação"}
+                    ? t("rankings.bestTime")
+                    : t("rankings.bestScore")}
                 </p>
               </div>
             </Link>
