@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PartyUp
 
-## Getting Started
+Plataforma modular de jogos no browser.
 
-First, run the development server:
+## Arquitetura (Documento 02)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+src/
+├── app/           # Rotas, layouts, providers — sem lógica de negócio
+├── components/    # UI reutilizável (layout, shared, ui)
+├── features/      # auth, games, home, rankings, rooms
+├── hooks/         # useUser, useRoom, useGame
+├── lib/           # supabase, games/registry, constants, seo
+├── services/      # game, ranking, auth, stats, room, achievements
+├── games/         # Módulos de jogo (memory, reaction, trivia)
+└── types/         # Tipos globais
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Rotas
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Rota | Descrição |
+|------|-----------|
+| `/` | Home (hero, destaques, categorias, rankings, novidades) |
+| `/games` | Catálogo com filtros |
+| `/games/[slug]` | Página do jogo |
+| `/games/[slug]/play` | Execução (code-split) |
+| `/rankings` | Rankings globais |
+| `/rankings/[slug]` | Ranking por jogo |
+| `/profile` | Perfil autenticado |
+| `/profile/[username]` | Perfil público |
+| `/rooms/[code]` | Sala multiplayer |
+| `/login` / `/register` | Autenticação |
+| `/admin` | Dashboard admin |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Começar
 
-## Learn More
+```bash
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Dark mode é o tema padrão (persistido em `localStorage` via `next-themes`).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Supabase (Documento 03)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Copia `.env.example` → `.env.local` e aplica migrations:
 
-## Deploy on Vercel
+```bash
+npx supabase db reset
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Ver `supabase/DATABASE.md` para tabelas, buckets e Realtime.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Novo jogo
+
+1. Módulo em `src/games/<id>/` (contrato em `src/lib/games/types.ts`)
+2. Registo em `src/lib/games/registry.ts`
+3. Metadados em `src/lib/games/catalog.ts` e/ou Supabase
+
+A navegação e a arquitetura **não** precisam de alterações.
