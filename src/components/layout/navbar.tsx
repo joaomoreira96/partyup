@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Gamepad2, LogIn, Menu, User } from "lucide-react";
 import { NAV_LINKS, SITE_NAME } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,32 +14,75 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { LogoutButton } from "@/features/auth/components/logout-button";
+
+function NavProfileLink({
+  displayName,
+  username,
+  onNavigate,
+  className,
+}: {
+  displayName: string;
+  username?: string | null;
+  onNavigate?: () => void;
+  className?: string;
+}) {
+  return (
+    <Link
+      href="/profile"
+      onClick={onNavigate}
+      className={cn(
+        "inline-flex min-h-9 max-w-[10.5rem] flex-col justify-center gap-0.5 rounded-[var(--radius-md)]",
+        "bg-surface px-3 py-2 ring-1 ring-border",
+        "transition-colors hover:bg-surface-hover",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "sm:max-w-[12rem]",
+        className
+      )}
+    >
+      <span className="truncate text-sm font-medium leading-tight">{displayName}</span>
+      {username ? (
+        <span className="truncate text-xs leading-tight text-muted-foreground">
+          @{username}
+        </span>
+      ) : (
+        <span className="text-xs leading-tight text-muted-foreground">Ver perfil</span>
+      )}
+    </Link>
+  );
+}
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { user, profile } = useUser();
 
   return (
     <>
-      {NAV_LINKS.map((link) => (
-        <Button
-          key={link.href}
-          variant="ghost"
-          className="justify-start md:justify-center"
-          asChild
-          onClick={onNavigate}
-        >
-          <Link href={link.href}>{link.label}</Link>
-        </Button>
-      ))}
+      {NAV_LINKS.filter((link) => !(user && link.href === "/profile")).map(
+        (link) => (
+          <Button
+            key={link.href}
+            variant="ghost"
+            className="justify-start md:justify-center"
+            asChild
+            onClick={onNavigate}
+          >
+            <Link href={link.href}>{link.label}</Link>
+          </Button>
+        )
+      )}
       {user ? (
-        <Button
-          variant="secondary"
-          className="justify-start md:justify-center"
-          asChild
-          onClick={onNavigate}
-        >
-          <Link href="/profile">{profile?.display_name ?? "Perfil"}</Link>
-        </Button>
+        <div className="flex w-full items-center gap-2 md:w-auto md:gap-1.5">
+          <NavProfileLink
+            displayName={profile?.display_name?.trim() || "Perfil"}
+            username={profile?.username}
+            onNavigate={onNavigate}
+            className="min-w-0 flex-1 md:flex-none md:max-w-[11rem]"
+          />
+          <LogoutButton
+            className="h-9 shrink-0 justify-start px-2.5 md:justify-center"
+            onDone={onNavigate}
+          />
+        </div>
       ) : (
         <>
           <Button
@@ -84,7 +128,7 @@ export function Navbar() {
         </Link>
 
         <nav
-          className="hidden items-center gap-0.5 md:flex"
+          className="hidden items-center gap-1 md:flex"
           aria-label="Principal"
         >
           <NavLinks />

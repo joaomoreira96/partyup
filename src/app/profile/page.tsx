@@ -5,6 +5,7 @@ import { MainShell } from "@/components/layout/main-shell";
 import { ProfileHeader } from "@/components/design/profile-header";
 import { AchievementsGrid } from "@/features/profile/components/achievements-grid";
 import { FavoriteGamesSection } from "@/features/profile/components/favorite-games";
+import { ProfileSettings } from "@/features/profile/components/profile-settings";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import {
   getCurrentProfile,
@@ -94,6 +95,8 @@ export default async function ProfilePage() {
           ) : undefined
         }
       />
+
+      <ProfileSettings profile={profile} />
 
       <dl className="mt-8 grid gap-4 sm:grid-cols-3">
         {statCards.map(({ label, value, icon: Icon }) => (

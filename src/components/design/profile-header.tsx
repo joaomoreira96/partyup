@@ -28,9 +28,19 @@ export function ProfileHeader({
       </Avatar>
       <div className="min-w-0 flex-1 text-center sm:text-left">
         <h1 className="text-2xl font-bold sm:text-3xl">{profile.display_name}</h1>
-        {profile.username && (
-          <p className="text-muted-foreground">@{profile.username}</p>
-        )}
+        <p
+          className={
+            profile.username
+              ? "mt-1 font-medium text-primary"
+              : "mt-1 text-sm text-amber-600 dark:text-amber-400"
+          }
+        >
+          {profile.username ? (
+            <>@{profile.username}</>
+          ) : (
+            <>Tag de jogador por definir — configura abaixo</>
+          )}
+        </p>
         {profile.bio && (
           <p className="mt-2 max-w-prose text-sm text-muted-foreground">{profile.bio}</p>
         )}
