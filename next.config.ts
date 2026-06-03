@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
         destination: "/register",
         permanent: true,
       },
+      {
+        source: "/profile/:username",
+        destination: "/players/:username",
+        permanent: true,
+      },
     ];
   },
 };

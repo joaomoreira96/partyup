@@ -7,6 +7,10 @@ export type ProfileSaveInput = {
   username?: string;
   avatar_url?: string | null;
   bio?: string | null;
+  country?: string | null;
+  public_profile?: boolean;
+  show_activity?: boolean;
+  show_country?: boolean;
 };
 
 export async function saveProfileClient(
@@ -42,6 +46,18 @@ export async function saveProfileClient(
   }
   if (input.bio !== undefined) {
     payload.bio = input.bio;
+  }
+  if (input.country !== undefined) {
+    payload.country = input.country;
+  }
+  if (input.public_profile !== undefined) {
+    payload.public_profile = input.public_profile;
+  }
+  if (input.show_activity !== undefined) {
+    payload.show_activity = input.show_activity;
+  }
+  if (input.show_country !== undefined) {
+    payload.show_country = input.show_country;
   }
 
   if (existing) {

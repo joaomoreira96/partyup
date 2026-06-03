@@ -60,7 +60,17 @@ export async function ensureProfileForUser(user: User) {
 export async function updateProfile(
   userId: string,
   updates: Partial<
-    Pick<Profile, "display_name" | "username" | "avatar_url" | "bio" | "country">
+    Pick<
+      Profile,
+      | "display_name"
+      | "username"
+      | "avatar_url"
+      | "bio"
+      | "country"
+      | "public_profile"
+      | "show_activity"
+      | "show_country"
+    >
   >
 ) {
   if (!isSupabaseConfigured()) {

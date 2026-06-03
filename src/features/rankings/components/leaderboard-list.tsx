@@ -44,7 +44,7 @@ export function LeaderboardList({
                 </span>
                 {entry.profile?.username ? (
                   <Link
-                    href={`/profile/${entry.profile.username}`}
+                    href={`/players/${entry.profile.username}`}
                     className="hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
                   >
                     {entry.profile.display_name ?? entry.profile.username}

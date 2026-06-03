@@ -19,6 +19,10 @@ const patchSchema = z.object({
     .optional()
     .transform((v) => (v === "" ? null : v)),
   bio: z.string().max(280).nullable().optional(),
+  country: z.string().max(60).nullable().optional(),
+  public_profile: z.boolean().optional(),
+  show_activity: z.boolean().optional(),
+  show_country: z.boolean().optional(),
 });
 
 export async function PATCH(request: Request) {
@@ -75,6 +79,20 @@ export async function PATCH(request: Request) {
 
   if (parsed.data.bio !== undefined) {
     updates.bio = parsed.data.bio;
+  }
+
+  if (parsed.data.country !== undefined) {
+    updates.country = parsed.data.country;
+  }
+
+  if (parsed.data.public_profile !== undefined) {
+    updates.public_profile = parsed.data.public_profile;
+  }
+  if (parsed.data.show_activity !== undefined) {
+    updates.show_activity = parsed.data.show_activity;
+  }
+  if (parsed.data.show_country !== undefined) {
+    updates.show_country = parsed.data.show_country;
   }
 
   if (Object.keys(updates).length === 0) {

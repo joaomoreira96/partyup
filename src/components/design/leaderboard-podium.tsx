@@ -15,7 +15,7 @@ function PlayerName({ entry }: { entry: LeaderboardEntry }) {
   if (entry.profile?.username) {
     return (
       <Link
-        href={`/profile/${entry.profile.username}`}
+        href={`/players/${entry.profile.username}`}
         className="truncate font-medium hover:underline focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
       >
         {name}

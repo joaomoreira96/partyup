@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -41,6 +42,11 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
 
   const [displayName, setDisplayName] = useState(profile.display_name ?? "");
   const [username, setUsername] = useState(profile.username ?? "");
+  const [bio, setBio] = useState(profile.bio ?? "");
+  const [country, setCountry] = useState(profile.country ?? "");
+  const [publicProfile, setPublicProfile] = useState(profile.public_profile !== false);
+  const [showActivity, setShowActivity] = useState(profile.show_activity !== false);
+  const [showCountry, setShowCountry] = useState(profile.show_country !== false);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? "");
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -90,6 +96,11 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
 
       const result = await saveProfileClient({
         display_name: displayName.trim(),
+        bio: bio.trim() || null,
+        country: country.trim() || null,
+        public_profile: publicProfile,
+        show_activity: showActivity,
+        show_country: showCountry,
         ...(tag && tag !== (profile.username ?? "") ? { username: tag } : {}),
         ...(avatarUrl && avatarUrl !== (profile.avatar_url ?? "")
           ? { avatar_url: avatarUrl }
@@ -224,9 +235,21 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
         Tag, avatar e segurança. A tag é única e aparece nos rankings e salas.
       </p>
 
+      {profile.username ? (
+        <p className="mt-3 text-sm">
+          <Link
+            href={`/players/${profile.username}`}
+            className="font-medium text-primary hover:underline"
+          >
+            Ver perfil público →
+          </Link>
+        </p>
+      ) : null}
+
       <Tabs defaultValue="perfil" className="mt-6">
-        <TabsList className="w-full sm:w-auto">
+        <TabsList className="w-full flex-wrap sm:w-auto">
           <TabsTrigger value="perfil">Perfil</TabsTrigger>
+          <TabsTrigger value="privacidade">Privacidade</TabsTrigger>
           <TabsTrigger value="seguranca">Segurança</TabsTrigger>
         </TabsList>
 
@@ -307,6 +330,31 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="profile-bio">Bio</Label>
+            <textarea
+              id="profile-bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              maxLength={280}
+              rows={3}
+              placeholder="Uma frase sobre ti como jogador..."
+              className="flex w-full rounded-[var(--radius-md)] border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="profile-country">País (opcional)</Label>
+            <Input
+              id="profile-country"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              maxLength={60}
+              placeholder="Portugal"
+              autoComplete="country-name"
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="profile-username">Tag de jogador</Label>
             <div className="flex items-center gap-1">
               <span className="text-muted-foreground">@</span>
@@ -340,6 +388,74 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
             ) : (
               "Guardar perfil"
             )}
+          </Button>
+        </TabsContent>
+
+        <TabsContent value="privacidade" className="mt-6 space-y-6">
+          <p className="text-sm text-muted-foreground">
+            Controla o que outros jogadores veem em{" "}
+            {profile.username ? (
+              <Link href={`/players/${profile.username}`} className="text-primary hover:underline">
+                /players/{profile.username}
+              </Link>
+            ) : (
+              "o teu perfil público"
+            )}
+            .
+          </p>
+          <ul className="space-y-4">
+            <li className="flex items-start gap-3">
+              <input
+                id="public-profile"
+                type="checkbox"
+                checked={publicProfile}
+                onChange={(e) => setPublicProfile(e.target.checked)}
+                className="mt-1 size-4 rounded border-input"
+              />
+              <label htmlFor="public-profile" className="text-sm leading-snug">
+                <span className="font-medium">Perfil público</span>
+                <span className="block text-muted-foreground">
+                  Se desativado, outros utilizadores não encontram o teu perfil.
+                </span>
+              </label>
+            </li>
+            <li className="flex items-start gap-3">
+              <input
+                id="show-activity"
+                type="checkbox"
+                checked={showActivity}
+                onChange={(e) => setShowActivity(e.target.checked)}
+                className="mt-1 size-4 rounded border-input"
+              />
+              <label htmlFor="show-activity" className="text-sm leading-snug">
+                <span className="font-medium">Mostrar atividade recente</span>
+                <span className="block text-muted-foreground">
+                  Partidas e conquistas recentes no perfil público.
+                </span>
+              </label>
+            </li>
+            <li className="flex items-start gap-3">
+              <input
+                id="show-country"
+                type="checkbox"
+                checked={showCountry}
+                onChange={(e) => setShowCountry(e.target.checked)}
+                className="mt-1 size-4 rounded border-input"
+              />
+              <label htmlFor="show-country" className="text-sm leading-snug">
+                <span className="font-medium">Mostrar país</span>
+                <span className="block text-muted-foreground">
+                  Exibe o país no cabeçalho do perfil.
+                </span>
+              </label>
+            </li>
+          </ul>
+          <Button
+            type="button"
+            disabled={savingProfile}
+            onClick={() => void saveProfile()}
+          >
+            Guardar privacidade
           </Button>
         </TabsContent>
 

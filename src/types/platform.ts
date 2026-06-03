@@ -24,11 +24,62 @@ export interface Profile {
   avatar_url: string | null;
   bio: string | null;
   country: string | null;
+  public_profile?: boolean;
+  show_activity?: boolean;
+  show_country?: boolean;
   role: UserRole;
   created_at: string;
   updated_at?: string;
   deleted_at?: string | null;
 }
+
+export type TopGameStat = {
+  gameId: string;
+  slug: string;
+  name: string;
+  moduleId: string;
+  thumbnailUrl: string | null;
+  sessions: number;
+  playTimeSeconds: number;
+  bestScore: number;
+  metric: LeaderboardMetric;
+};
+
+export type PersonalRecord = {
+  gameId: string;
+  gameName: string;
+  slug: string;
+  label: string;
+  score: number;
+  metric: LeaderboardMetric;
+};
+
+export type ActiveRanking = {
+  gameId: string;
+  gameName: string;
+  slug: string;
+  rank: number;
+  metric: LeaderboardMetric;
+};
+
+export type ProfileActivityItem = {
+  id: string;
+  type: GameEventType | "achievement";
+  message: string;
+  createdAt: string;
+};
+
+export type PublicPlayerProfile = {
+  profile: Profile;
+  stats: UserStats;
+  achievementCount: number;
+  achievements: Achievement[];
+  topGames: TopGameStat[];
+  personalRecords: PersonalRecord[];
+  activeRankings: ActiveRanking[];
+  recentActivity: ProfileActivityItem[];
+  isOwner: boolean;
+};
 
 export interface Category {
   id: string;

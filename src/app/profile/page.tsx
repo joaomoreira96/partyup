@@ -87,7 +87,7 @@ export default async function ProfilePage() {
         subtitle={
           profile.username ? (
             <Link
-              href={`/profile/${profile.username}`}
+              href={`/players/${profile.username}`}
               className="text-primary hover:underline"
             >
               Ver perfil público →
