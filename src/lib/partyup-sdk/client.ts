@@ -34,6 +34,14 @@ export class PartyUpSDK {
     return this.state;
   }
 
+  getGameId(): string {
+    return this.options.gameId;
+  }
+
+  getModuleId(): string {
+    return this.options.moduleId;
+  }
+
   getCurrentUser(): PartyUpUser {
     return this.options.user;
   }
@@ -54,7 +62,13 @@ export class PartyUpSDK {
   }
 
   async startGame(): Promise<void> {
-    if (this.sessionStarted) return;
+    if (this.sessionStarted && !this.sessionEnded) return;
+
+    if (this.sessionEnded) {
+      this.sessionStarted = false;
+      this.sessionEnded = false;
+      this.transition("READY");
+    }
 
     try {
       const res = await fetch("/api/sdk/game/start", {

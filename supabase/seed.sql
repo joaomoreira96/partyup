@@ -13,6 +13,17 @@ insert into public.games (
   supports_desktop, supports_tablet, supports_mobile, status
 ) values
   (
+    'snake',
+    'Snake',
+    'Controla a cobra, recolhe comida e tenta obter a maior pontuação possível.',
+    '/games/snake-thumb.svg',
+    '/games/snake-banner.svg',
+    'snake',
+    true, false, true,
+    true, true, true,
+    'active'
+  ),
+  (
     'memoria-classica',
     'Memória Clássica',
     'Encontra todos os pares de cartas o mais rápido possível.',
@@ -53,6 +64,7 @@ insert into public.game_categories (game_id, category_id)
 select g.id, c.id
 from public.games g
 join public.categories c on (
+  (g.slug = 'snake' and c.slug = 'arcade') or
   (g.slug = 'memoria-classica' and c.slug in ('puzzle', 'memory')) or
   (g.slug = 'reacao-rapida' and c.slug = 'arcade') or
   (g.slug = 'trivia-rapida' and c.slug in ('trivia', 'party'))

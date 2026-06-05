@@ -4,6 +4,7 @@ import {
   filterGames,
   getStaticGameBySlug,
 } from "@/lib/games/catalog";
+import { resolveGameModuleId } from "@/lib/games/resolve-module-id";
 import { FEATURED_GAME_SLUGS } from "@/lib/constants";
 import { isPlayableGame, normalizeGameStatus } from "@/lib/db/mappers";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
@@ -26,11 +27,26 @@ export type GameFilters = {
 };
 
 function mapGameRow(row: Record<string, unknown>, categories: Category[]): GameRecord {
-  const game = row as unknown as GameRecord;
+  const raw = row as Record<string, unknown> & Partial<GameRecord>;
+  const game = raw as unknown as GameRecord;
+  const supportsMultiplayer =
+    game.supports_multiplayer ??
+    (typeof raw.is_multiplayer === "boolean" ? raw.is_multiplayer : false);
+
   return {
     ...game,
     status: normalizeGameStatus(String(game.status)),
     categories,
+    supports_multiplayer: supportsMultiplayer,
+    guest_allowed: game.guest_allowed ?? true,
+    supports_tablet: game.supports_tablet ?? game.supports_mobile ?? true,
+  };
+}
+
+function finalizeGameRecord(game: GameRecord): GameRecord {
+  return {
+    ...game,
+    module_id: resolveGameModuleId(game),
   };
 }
 
@@ -41,7 +57,6 @@ async function fetchActiveBuild(gameId: string): Promise<GameBuild | null> {
     .select("id, game_id, version, build_url, is_active")
     .eq("game_id", gameId)
     .eq("is_active", true)
-    .is("deleted_at", null)
     .maybeSingle();
 
   return (data as GameBuild) ?? null;
@@ -56,7 +71,6 @@ async function fetchGamesFromDb(): Promise<GameRecord[]> {
       game_categories ( categories ( id, slug, name ) )`
     )
     .eq("status", "active")
-    .is("deleted_at", null)
     .order("name");
 
   if (error || !games?.length) return [];
@@ -72,7 +86,7 @@ async function fetchGamesFromDb(): Promise<GameRecord[]> {
       const { game_categories: _, ...rest } = row;
       const mapped = mapGameRow(rest as Record<string, unknown>, categories);
       mapped.active_build = await fetchActiveBuild(mapped.id);
-      return mapped;
+      return finalizeGameRecord(mapped);
     })
   );
 }
@@ -87,7 +101,6 @@ async function fetchGameBySlugFromDb(slug: string): Promise<GameRecord | null> {
     )
     .eq("slug", slug)
     .eq("status", "active")
-    .is("deleted_at", null)
     .maybeSingle();
 
   if (error || !data) return null;
@@ -100,7 +113,29 @@ async function fetchGameBySlugFromDb(slug: string): Promise<GameRecord | null> {
   const { game_categories: _, ...rest } = data;
   const mapped = mapGameRow(rest as Record<string, unknown>, categories);
   mapped.active_build = await fetchActiveBuild(mapped.id);
-  return mapped;
+  return finalizeGameRecord(mapped);
+}
+
+export async function resolveModuleIdForGame(
+  gameId: string
+): Promise<string | undefined> {
+  if (!isSupabaseConfigured()) return undefined;
+
+  const supabase = await createClient();
+  const { data: game } = await supabase
+    .from("games")
+    .select("slug")
+    .eq("id", gameId)
+    .maybeSingle();
+
+  if (!game?.slug) return undefined;
+
+  const build = await fetchActiveBuild(gameId);
+  return resolveGameModuleId({
+    slug: game.slug,
+    module_id: "",
+    active_build: build,
+  });
 }
 
 function applyMultiplayerFilter(

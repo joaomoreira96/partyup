@@ -6,6 +6,7 @@ export const SITE_DESCRIPTION =
 
 /** Slugs destacados na home — adicionar jogos sem alterar navegação */
 export const FEATURED_GAME_SLUGS = [
+  "snake",
   "memoria-classica",
   "reacao-rapida",
   "trivia-rapida",

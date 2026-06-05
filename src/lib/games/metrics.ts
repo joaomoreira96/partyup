@@ -13,6 +13,8 @@ export function getMaxScoreForModule(moduleId: string): number {
       return 100;
     case "memory":
       return 50_000;
+    case "snake":
+      return 50_000;
     default:
       return 100_000;
   }

@@ -3,8 +3,7 @@ import { getSessionUser } from "@/services/auth.service";
 import { logGameEvent } from "@/services/event.service";
 import { validateScoreForServer } from "@/services/score-validation.service";
 import { submitLeaderboardScore } from "@/services/stats.service";
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { resolveModuleIdForGame } from "@/services/game.service";
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
@@ -26,16 +25,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Jogo inválido." }, { status: 400 });
   }
 
-  let moduleId: string | undefined;
-  if (isSupabaseConfigured()) {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("games")
-      .select("module_id")
-      .eq("id", gameId)
-      .maybeSingle();
-    moduleId = data?.module_id;
-  }
+  const moduleId = await resolveModuleIdForGame(gameId);
 
   const validation = validateScoreForServer({
     score,

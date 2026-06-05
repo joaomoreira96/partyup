@@ -14,6 +14,7 @@ const MODULE_LIMITS: Record<
   memory: { maxScore: 50_000, maxDurationMs: 600_000, metric: "score" },
   reaction: { maxScore: 30_000, maxDurationMs: 60_000, metric: "time" },
   trivia: { maxScore: 100, maxDurationMs: 600_000, metric: "score" },
+  snake: { maxScore: 50_000, maxDurationMs: 3_600_000, metric: "score" },
 };
 
 export function validateScoreForServer(

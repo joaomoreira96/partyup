@@ -4,8 +4,9 @@ import { processAchievementHints } from "@/services/achievement-hints.service";
 import { logGameEvent } from "@/services/event.service";
 import { validateScoreForServer } from "@/services/score-validation.service";
 import { recordPlaySession, submitLeaderboardScore } from "@/services/stats.service";
-import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/server";
+import { resolveModuleIdForGame } from "@/services/game.service";
 import type { AchievementHint } from "@/lib/partyup-sdk/types";
 
 export async function POST(request: Request) {
@@ -34,16 +35,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Dados inválidos." }, { status: 400 });
   }
 
-  let moduleId: string | undefined;
-  if (isSupabaseConfigured()) {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("games")
-      .select("module_id, slug")
-      .eq("id", gameId)
-      .maybeSingle();
-    moduleId = data?.module_id;
-  }
+  const moduleId = await resolveModuleIdForGame(gameId);
 
   const validation = validateScoreForServer({
     score: result.score,

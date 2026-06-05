@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle } from "lucide-react";
+import { resolveGameModuleId } from "@/lib/games/resolve-module-id";
 import { loadGameModule } from "@/lib/games/registry";
 import { createPartyUpSDK, PartyUpSdkError } from "@/lib/partyup-sdk";
 import { getGuestId, getGuestName } from "@/lib/guest";
@@ -60,19 +61,32 @@ export function GamePlayer({
       setLoading(true);
       setError(null);
 
-      const module = await loadGameModule(game.module_id);
-      if (!module || !containerRef.current || !mounted) {
-        setError(t("games.unavailable"));
-        setLoading(false);
+      const moduleId = resolveGameModuleId(game);
+      const module = await loadGameModule(moduleId);
+
+      if (!module) {
+        if (mounted) {
+          setError(t("games.unavailable"));
+          setLoading(false);
+        }
         return;
       }
 
-      const metric = getMetricForGame(game.module_id);
+      const container = containerRef.current;
+      if (!container || !mounted) {
+        if (mounted) {
+          setError(t("games.unavailable"));
+          setLoading(false);
+        }
+        return;
+      }
+
+      const metric = getMetricForGame(moduleId);
       const sdk = createPartyUpSDK({
         gameId: game.id,
-        moduleId: game.module_id,
+        moduleId,
         metric,
-        maxScore: getMaxScoreForModule(game.module_id),
+        maxScore: getMaxScoreForModule(moduleId),
         user: {
           id: userId,
           displayName,
@@ -92,8 +106,8 @@ export function GamePlayer({
       const wrapper = document.createElement("div");
       wrapper.className =
         "game-module-root w-full min-h-[240px] [--game-safe-top:env(safe-area-inset-top)]";
-      containerRef.current.innerHTML = "";
-      containerRef.current.appendChild(wrapper);
+      container.innerHTML = "";
+      container.appendChild(wrapper);
 
       try {
         cleanup = module.mount({
@@ -120,8 +134,7 @@ export function GamePlayer({
       if (containerRef.current) containerRef.current.innerHTML = "";
     };
   }, [
-    game.id,
-    game.module_id,
+    game,
     displayName,
     userId,
     isGuest,
@@ -169,7 +182,7 @@ export function GamePlayer({
         </p>
       )}
 
-      {error ? (
+      {error && (
         <div
           className="flex items-start gap-3 rounded-[var(--radius-md)] border border-destructive/40 bg-destructive/10 p-4"
           role="alert"
@@ -177,15 +190,21 @@ export function GamePlayer({
           <AlertCircle className="size-5 shrink-0 text-destructive" aria-hidden />
           <p className="text-sm text-destructive">{error}</p>
         </div>
-      ) : loading ? (
-        <LoadingState label={t("games.play.loading")} />
-      ) : (
+      )}
+
+      <div className="relative w-full">
+        {loading && (
+          <div className="absolute inset-0 z-10 flex min-h-[280px] items-center justify-center rounded-[var(--radius-premium)] border border-border bg-card/95">
+            <LoadingState label={t("games.play.loading")} />
+          </div>
+        )}
         <div
           ref={containerRef}
-          className="w-full rounded-[var(--radius-premium)] border border-border bg-card p-4"
+          className="w-full min-h-[280px] rounded-[var(--radius-premium)] border border-border bg-card p-4"
           aria-label={t("games.play.areaLabel", { name: game.name })}
+          aria-busy={loading}
         />
-      )}
+      </div>
     </div>
   );
 }
