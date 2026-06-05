@@ -188,7 +188,7 @@ export interface Room {
   game_id: string;
   host_user_id: string | null;
   status: RoomStatus;
-  max_players: number;
+  max_players?: number;
   created_at: string;
 }
 
@@ -197,8 +197,8 @@ export interface RoomPlayer {
   room_id: string;
   user_id: string | null;
   guest_name: string | null;
-  is_ready: boolean;
-  is_host: boolean;
+  is_ready?: boolean;
+  is_host?: boolean;
   joined_at: string;
   profile?: Pick<Profile, "display_name" | "username">;
 }

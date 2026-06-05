@@ -1,17 +1,28 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Users } from "lucide-react";
+import { Heart, Star, Users } from "lucide-react";
 import { CompatibilityBadges } from "@/features/games/components/compatibility-badges";
+import { FavoriteGameToggle } from "@/features/games/components/favorite-game-toggle";
 import { useI18n } from "@/features/i18n/locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { GameRecord } from "@/types/platform";
 
-export function GameCard({ game }: { game: GameRecord }) {
+export function GameCard({
+  game,
+  initialIsFavorite = false,
+  showFavoriteToggle = false,
+}: {
+  game: GameRecord;
+  initialIsFavorite?: boolean;
+  showFavoriteToggle?: boolean;
+}) {
   const { t } = useI18n();
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
 
   return (
     <article
@@ -40,6 +51,24 @@ export function GameCard({ game }: { game: GameRecord }) {
             {t("games.featured")}
           </Badge>
         )}
+        {showFavoriteToggle ? (
+          <div className="absolute right-3 top-3 z-10">
+            <FavoriteGameToggle
+              gameId={game.id}
+              initialIsFavorite={isFavorite}
+              variant="overlay"
+              onChange={setIsFavorite}
+            />
+          </div>
+        ) : isFavorite ? (
+          <Badge
+            className="absolute right-3 top-3 gap-1 border-0 bg-rose-500 text-white shadow-sm"
+            title={t("games.favorite.favorited")}
+          >
+            <Heart className="size-3 fill-current" aria-hidden />
+            {t("games.favorite.badge")}
+          </Badge>
+        ) : null}
         <span className="sr-only">{game.name}</span>
       </Link>
       <div className="flex flex-1 flex-col gap-3 p-4">

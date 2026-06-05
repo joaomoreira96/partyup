@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users } from "lucide-react";
 import { getGuestName } from "@/lib/guest";
+import { saveRoomPlayerId } from "@/lib/rooms/player-session";
 import { useI18n } from "@/features/i18n/locale-provider";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -29,9 +30,22 @@ export function CreateRoomButton({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gameSlug, guestName: getGuestName() }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as {
+        joinUrl?: string;
+        code?: string;
+        playerId?: string;
+        error?: string;
+        detail?: string;
+      };
+      if (data.playerId && data.code) {
+        saveRoomPlayerId(data.code, data.playerId);
+      }
       if (data.joinUrl) router.push(data.joinUrl);
-      else toast.error(t("room.createFailed"));
+      else {
+        const hint =
+          data.detail && data.detail !== data.error ? ` (${data.detail})` : "";
+        toast.error(`${data.error ?? t("room.createFailed")}${hint}`);
+      }
     } catch {
       toast.error(t("room.offline"));
     } finally {

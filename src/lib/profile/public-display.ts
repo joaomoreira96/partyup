@@ -10,21 +10,38 @@ export function formatMemberSince(createdAt: string, locale: Locale = "pt"): str
   });
 }
 
-export function formatPlayTimeHours(seconds: number, locale: Locale = "pt"): string {
-  const hours = Math.floor(seconds / 3600);
+/** Formata tempo de jogo total (segundos → horas, minutos ou segundos). */
+export function formatPlayTime(seconds: number, locale: Locale = "pt"): string {
+  const sec = Math.max(0, Math.floor(seconds));
+
+  if (sec === 0) {
+    return locale === "en" ? "0 min" : "0 min";
+  }
+
+  const hours = Math.floor(sec / 3600);
   if (hours >= 1) {
     const label =
       hours === 1
         ? locale === "en"
           ? "hour"
-          : "Hora"
+          : "hora"
         : locale === "en"
           ? "hours"
-          : "Horas";
+          : "horas";
     return `${hours} ${label}`;
   }
-  const minutes = Math.max(1, Math.round(seconds / 60));
+
+  if (sec < 60) {
+    return `${sec} ${locale === "en" ? "sec" : "s"}`;
+  }
+
+  const minutes = Math.round(sec / 60);
   return `${minutes} min`;
+}
+
+/** @deprecated Prefer formatPlayTime — mantido para imports existentes */
+export function formatPlayTimeHours(seconds: number, locale: Locale = "pt"): string {
+  return formatPlayTime(seconds, locale);
 }
 
 export function formatRecordScore(score: number, metric: LeaderboardMetric): string {

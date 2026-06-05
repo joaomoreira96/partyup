@@ -130,8 +130,12 @@ export function GamePlayer({
 
     return () => {
       mounted = false;
-      cleanup?.();
-      if (containerRef.current) containerRef.current.innerHTML = "";
+      const runCleanup = cleanup;
+      const container = containerRef.current;
+      queueMicrotask(() => {
+        runCleanup?.();
+        if (container) container.innerHTML = "";
+      });
     };
   }, [
     game,

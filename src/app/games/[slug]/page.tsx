@@ -6,8 +6,12 @@ import { MainShell } from "@/components/layout/main-shell";
 import { CompatibilityBadges } from "@/features/games/components/compatibility-badges";
 import { GameStatsPanel } from "@/features/games/components/game-stats-panel";
 import { CreateRoomButton } from "@/features/rooms/components/create-room-button";
+import { JoinRoomForm } from "@/features/rooms/components/join-room-form";
 import { buildGameMetadata } from "@/lib/seo/metadata";
 import { getServerI18n } from "@/i18n/get-server-i18n";
+import { getSessionUser } from "@/services/auth.service";
+import { isGameFavorite } from "@/services/favorites.service";
+import { FavoriteGameToggle } from "@/features/games/components/favorite-game-toggle";
 import { getGameBySlug, getGameStats } from "@/services/game.service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +34,11 @@ export default async function GameDetailPage({ params }: PageProps) {
   const game = await getGameBySlug(slug);
   if (!game) notFound();
 
-  const stats = await getGameStats(game.id);
+  const user = await getSessionUser();
+  const [stats, isFavorite] = await Promise.all([
+    getGameStats(game.id),
+    user ? isGameFavorite(user.id, game.id) : Promise.resolve(false),
+  ]);
 
   return (
     <MainShell>
@@ -64,6 +72,12 @@ export default async function GameDetailPage({ params }: PageProps) {
         </div>
 
         <aside className="flex flex-col gap-3 rounded-xl border bg-card p-6 lg:sticky lg:top-24 lg:self-start">
+          {user ? (
+            <FavoriteGameToggle
+              gameId={game.id}
+              initialIsFavorite={isFavorite}
+            />
+          ) : null}
           <Button size="lg" asChild>
             <Link href={`/games/${game.slug}/play`}>{t("common.play")}</Link>
           </Button>
@@ -71,6 +85,7 @@ export default async function GameDetailPage({ params }: PageProps) {
             gameSlug={game.slug}
             supportsMultiplayer={game.supports_multiplayer}
           />
+          {game.supports_multiplayer && <JoinRoomForm gameSlug={game.slug} />}
           <Button variant="outline" asChild>
             <Link href={`/rankings/${game.slug}`}>
               <Trophy className="size-4" aria-hidden />

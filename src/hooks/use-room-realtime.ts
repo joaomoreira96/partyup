@@ -29,10 +29,7 @@ export function useRoomRealtime(roomId: string | null) {
         async () => {
           const { data } = await supabase
             .from("room_players")
-            .select(
-              `id, room_id, user_id, guest_name, is_ready, is_host, joined_at,
-               profiles ( display_name, username )`
-            )
+            .select(`*, profiles ( display_name, username )`)
             .eq("room_id", roomId)
             .order("joined_at");
 

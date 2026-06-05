@@ -1,77 +1,285 @@
 import { createClient } from "@/lib/supabase/server";
+
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+
 import { generateRoomCode, normalizeRoomCode } from "@/lib/rooms/codes";
+
 import { STATIC_GAMES } from "@/lib/games/catalog";
+
 import { isPlayableGame } from "@/lib/db/mappers";
+
 import type { GameRecord, Room, RoomPlayer } from "@/types/platform";
+
+
 
 export { generateRoomCode, normalizeRoomCode };
 
-export async function getRoomByCode(code: string) {
-  const normalized = normalizeRoomCode(code);
-  if (!normalized || !isSupabaseConfigured()) return null;
 
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("rooms")
-    .select(
-      `id, code, game_id, host_user_id, status, max_players, created_at, updated_at,
-       games ( slug, name, module_id, supports_multiplayer )`
-    )
-    .eq("code", normalized)
-    .is("deleted_at", null)
-    .maybeSingle();
 
-  return data;
+export type RoomRow = Room & {
+
+  metadata?: unknown;
+
+  games?:
+
+    | { slug: string; name?: string; module_id?: string; is_multiplayer?: boolean }
+
+    | { slug: string }[];
+
+};
+
+
+
+function mapRpcRoom(data: Record<string, unknown>): RoomRow {
+
+  const host =
+
+    (data.host_user_id as string | null | undefined) ??
+
+    (data.host_id as string | null | undefined) ??
+
+    null;
+
+
+
+  return {
+
+    id: data.id as string,
+
+    code: data.code as string,
+
+    game_id: data.game_id as string,
+
+    host_user_id: host,
+
+    status: data.status as Room["status"],
+
+    max_players: (data.max_players as number | undefined) ?? 2,
+
+    created_at: (data.created_at as string) ?? new Date().toISOString(),
+
+    metadata: data.metadata,
+
+  };
+
 }
 
-export async function getRoomPlayers(roomId: string): Promise<RoomPlayer[]> {
-  if (!isSupabaseConfigured()) return [];
+
+
+async function attachGameSlug(
+
+  supabase: Awaited<ReturnType<typeof createClient>>,
+
+  room: RoomRow
+
+): Promise<RoomRow> {
+
+  if (extractGameSlugFromRoom(room)) return room;
+
+
+
+  const { data: game } = await supabase
+
+    .from("games")
+
+    .select("slug, name, is_multiplayer")
+
+    .eq("id", room.game_id)
+
+    .maybeSingle();
+
+
+
+  if (!game) return room;
+
+  return { ...room, games: game };
+
+}
+
+
+
+async function fetchRoomDirect(code: string): Promise<RoomRow | null> {
 
   const supabase = await createClient();
+
+  const selectAttempts = [
+
+    "id, code, game_id, status, host_user_id, metadata, max_players",
+
+    "id, code, game_id, status, host_id, max_players",
+
+    "id, code, game_id, status",
+
+  ];
+
+
+
+  for (const columns of selectAttempts) {
+
+    const { data, error } = await supabase
+
+      .from("rooms")
+
+      .select(columns)
+
+      .eq("code", code)
+
+      .maybeSingle();
+
+
+
+    if (error || !data) continue;
+
+
+
+    const row = data as unknown as Record<string, unknown>;
+
+    const mapped = mapRpcRoom(row);
+
+    if (row.host_id && !mapped.host_user_id) {
+
+      mapped.host_user_id = row.host_id as string | null;
+
+    }
+
+    return mapped;
+
+  }
+
+
+
+  return null;
+
+}
+
+
+
+export async function getRoomByCode(code: string): Promise<RoomRow | null> {
+
+  const normalized = normalizeRoomCode(code);
+
+  if (!normalized || !isSupabaseConfigured()) return null;
+
+
+
+  const supabase = await createClient();
+
+
+
+  const { data: rpcData, error: rpcError } = await supabase.rpc("get_room_by_code", {
+
+    p_code: normalized,
+
+  });
+
+
+
+  if (!rpcError && rpcData && typeof rpcData === "object") {
+
+    const room = mapRpcRoom(rpcData as Record<string, unknown>);
+
+    return attachGameSlug(supabase, room);
+
+  }
+
+
+
+  const direct = await fetchRoomDirect(normalized);
+
+  if (!direct) return null;
+
+  return attachGameSlug(supabase, direct);
+
+}
+
+
+
+export async function getRoomPlayers(roomId: string): Promise<RoomPlayer[]> {
+
+  if (!isSupabaseConfigured()) return [];
+
+
+
+  const supabase = await createClient();
+
   const { data } = await supabase
+
     .from("room_players")
-    .select(
-      `id, room_id, user_id, guest_name, is_ready, is_host, joined_at,
-       profiles ( display_name, username )`
-    )
+
+    .select(`*, profiles ( display_name, username )`)
+
     .eq("room_id", roomId)
+
     .order("joined_at");
+
+
 
   if (!data) return [];
 
+
+
   return data.map((row) => {
+
     const { profiles, ...player } = row as RoomPlayer & {
+
       profiles: RoomPlayer["profile"] | RoomPlayer["profile"][];
+
     };
+
     const profile = Array.isArray(profiles) ? profiles[0] : profiles;
+
     return { ...player, profile: profile ?? undefined };
+
   });
+
 }
+
+
 
 export function resolveOfflineRoomGame(slug?: string | null): GameRecord | undefined {
+
   if (!slug) return undefined;
+
   const game = STATIC_GAMES.find((g) => g.slug === slug);
+
   return game && isPlayableGame(game) ? game : undefined;
+
 }
+
+
 
 export async function countActiveRooms(): Promise<number> {
+
   if (!isSupabaseConfigured()) return 0;
+
   const supabase = await createClient();
+
   const { count } = await supabase
+
     .from("rooms")
+
     .select("*", { count: "exact", head: true })
-    .is("deleted_at", null)
+
     .in("status", ["waiting", "playing"]);
+
   return count ?? 0;
+
 }
 
-export type RoomWithGame = Room & {
-  games?: { slug: string; name: string; module_id: string } | { slug: string }[];
-};
+
+
+export type RoomWithGame = RoomRow;
+
+
 
 export function extractGameSlugFromRoom(room: RoomWithGame): string | undefined {
+
   if (!room.games) return undefined;
+
   const g = Array.isArray(room.games) ? room.games[0] : room.games;
+
   return g && typeof g === "object" && "slug" in g ? g.slug : undefined;
+
 }
+
+

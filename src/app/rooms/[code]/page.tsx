@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { MainShell } from "@/components/layout/main-shell";
 import { RoomLobby } from "@/features/rooms/components/room-lobby";
+import { RoomPageLoader } from "@/features/rooms/components/room-page-loader";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import {
@@ -8,6 +9,7 @@ import {
   getRoomByCode,
   resolveOfflineRoomGame,
 } from "@/services/room.service";
+import { getCurrentProfile } from "@/services/auth.service";
 import { getGameBySlug } from "@/services/game.service";
 
 interface PageProps {
@@ -36,9 +38,8 @@ export default async function RoomPage({ params, searchParams }: PageProps) {
   if (!gameSlug) {
     return (
       <MainShell className="max-w-lg">
-        <p className="text-muted-foreground">
-          Sala {code}. Adiciona ?game=memoria-classica ao URL.
-        </p>
+        <h1 className="mb-6 text-2xl font-bold">Sala multiplayer</h1>
+        <RoomPageLoader code={code.toUpperCase()} />
       </MainShell>
     );
   }
@@ -48,10 +49,17 @@ export default async function RoomPage({ params, searchParams }: PageProps) {
 
   if (!game) notFound();
 
+  const profile = await getCurrentProfile();
+
   return (
     <MainShell className="max-w-lg">
       <h1 className="mb-6 text-2xl font-bold">Sala multiplayer</h1>
-      <RoomLobby code={code.toUpperCase()} game={game} offline={offline} />
+      <RoomLobby
+        code={code.toUpperCase()}
+        game={game}
+        offline={offline}
+        profile={profile}
+      />
     </MainShell>
   );
 }

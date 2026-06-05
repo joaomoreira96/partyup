@@ -6,6 +6,8 @@ import { CatalogFilters } from "@/features/games/components/catalog-filters";
 import { GameCard } from "@/features/games/components/game-card";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getServerI18n } from "@/i18n/get-server-i18n";
+import { getSessionUser } from "@/services/auth.service";
+import { getUserFavoriteGameIds } from "@/services/favorites.service";
 import { getCategories, getPublishedGames } from "@/services/game.service";
 import type { DeviceCompatibility } from "@/types/platform";
 
@@ -37,7 +39,9 @@ export default async function GamesCatalogPage({ searchParams }: PageProps) {
       ? (params.device as DeviceCompatibility)
       : undefined;
 
-  const [games, categories] = await Promise.all([
+  const user = await getSessionUser();
+
+  const [games, categories, favoriteIds] = await Promise.all([
     getPublishedGames({
       category: params.category,
       device,
@@ -56,7 +60,10 @@ export default async function GamesCatalogPage({ searchParams }: PageProps) {
           : undefined,
     }),
     getCategories(),
+    user ? getUserFavoriteGameIds(user.id) : Promise.resolve([]),
   ]);
+
+  const favoriteSet = new Set(favoriteIds);
 
   return (
     <MainShell>
@@ -98,7 +105,11 @@ export default async function GamesCatalogPage({ searchParams }: PageProps) {
           <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {games.map((game) => (
               <li key={game.id}>
-                <GameCard game={game} />
+                <GameCard
+                  game={game}
+                  initialIsFavorite={favoriteSet.has(game.id)}
+                  showFavoriteToggle={Boolean(user)}
+                />
               </li>
             ))}
           </ul>

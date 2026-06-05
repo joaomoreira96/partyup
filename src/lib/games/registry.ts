@@ -17,6 +17,10 @@ const registrations: GameModuleRegistration[] = [
     id: "snake",
     loader: () => import("@/games/snake"),
   },
+  {
+    id: "reaction-duel",
+    loader: () => import("@/games/reaction-duel"),
+  },
 ];
 
 const cache = new Map<string, GameModule>();

@@ -60,13 +60,24 @@ export async function POST(request: Request) {
     payload: { guestId, score: result.score, events },
   });
 
-  await recordPlaySession({
+  const sessionResult = await recordPlaySession({
     gameId,
     userId: user?.id,
-    guestId,
     result,
+    sessionMetadata:
+      events && typeof events === "object"
+        ? (events as Record<string, unknown>)
+        : undefined,
   });
 
+  if (!sessionResult.ok && sessionResult.error !== "offline") {
+    return NextResponse.json(
+      { message: "Não foi possível guardar a sessão de jogo." },
+      { status: 500 }
+    );
+  }
+
+  let ranked = false;
   if (user && submitScore) {
     const scoreResult = await submitLeaderboardScore({
       gameId,
@@ -75,12 +86,7 @@ export async function POST(request: Request) {
       metric: result.metric,
     });
 
-    if (!scoreResult.ok) {
-      return NextResponse.json(
-        { message: "Não foi possível registar no ranking." },
-        { status: 500 }
-      );
-    }
+    ranked = scoreResult.ok;
 
     if (achievementHints?.length) {
       await processAchievementHints(user.id, achievementHints, {
@@ -111,6 +117,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    ranked: Boolean(user && submitScore),
+    ranked,
   });
 }

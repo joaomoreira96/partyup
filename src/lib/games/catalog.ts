@@ -12,6 +12,27 @@ export const STATIC_CATEGORIES: Category[] = [
 
 export const STATIC_GAMES: GameRecord[] = [
   {
+    id: "g-duel",
+    slug: "reaction-duel",
+    name: "Reaction Duel",
+    description:
+      "Duelo de reflexos 1v1. Espera pelo verde e clica mais rápido que o teu adversário.",
+    thumbnail_url: "/games/reaction-duel-thumb.svg",
+    banner_url: "/games/reaction-duel-banner.svg",
+    module_id: "reaction-duel",
+    guest_allowed: true,
+    supports_multiplayer: true,
+    supports_desktop: true,
+    supports_tablet: true,
+    supports_mobile: true,
+    status: "active",
+    featured: true,
+    categories: [
+      { id: "2", slug: "arcade", name: "Arcade" },
+      { id: "5", slug: "party", name: "Party" },
+    ],
+  },
+  {
     id: "g0",
     slug: "snake",
     name: "Snake",

@@ -1,0 +1,32 @@
+import { createRoot } from "react-dom/client";
+import { createElement } from "react";
+import type { GameModule, GameMountContext } from "@/lib/games/types";
+import { reactionDuelConfig } from "@/games/reaction-duel/config";
+import { Game } from "@/games/reaction-duel/Game";
+
+const game: GameModule = {
+  id: "reaction-duel",
+  config: reactionDuelConfig,
+  mount(ctx: GameMountContext) {
+    const roomCode = ctx.roomId ?? "";
+
+    const root = createRoot(ctx.container);
+    root.render(
+      createElement(Game, {
+        roomCode,
+        gameId: ctx.sdk.getGameId(),
+        userId: ctx.userId,
+        isGuest: ctx.isGuest,
+        sdk: ctx.sdk,
+      })
+    );
+
+    return () => {
+      queueMicrotask(() => {
+        root.unmount();
+      });
+    };
+  },
+};
+
+export default game;

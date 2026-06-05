@@ -19,7 +19,9 @@ const game: GameModule = {
     );
 
     return () => {
-      root.unmount();
+      queueMicrotask(() => {
+        root.unmount();
+      });
     };
   },
 };

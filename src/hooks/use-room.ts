@@ -2,15 +2,40 @@
 
 import { useCallback, useState } from "react";
 import { getGuestName } from "@/lib/guest";
+import { getRoomPlayerId, saveRoomPlayerId } from "@/lib/rooms/player-session";
 
-type RoomAction = "join" | "ready" | "start";
+type RoomAction =
+  | "join"
+  | "ready"
+  | "unready"
+  | "start"
+  | "click"
+  | "rematch"
+  | "leave"
+  | "record_stats";
+
+export type RoomStatsRecordInfo = {
+  ok: boolean;
+  recorded?: number;
+  skipped?: boolean;
+  reason?: string;
+  error?: string;
+  details?: Array<{
+    playerId: string;
+    userId: string | null;
+    ok: boolean;
+    skipped?: boolean;
+    error?: string;
+  }>;
+};
 
 export function useRoom(code: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [playerId, setPlayerId] = useState<string | null>(() => getRoomPlayerId(code));
 
   const runAction = useCallback(
-    async (action: RoomAction) => {
+    async (action: RoomAction, extra?: Record<string, unknown>) => {
       setLoading(true);
       setError(null);
       try {
@@ -21,19 +46,40 @@ export function useRoom(code: string) {
             code,
             action,
             guestName: getGuestName(),
+            playerId: playerId ?? getRoomPlayerId(code),
+            ...extra,
           }),
         });
+        const data = (await res.json()) as {
+          error?: string;
+          detail?: string;
+          playerId?: string;
+          playUrl?: string;
+          metadata?: unknown;
+          result?: {
+            playerId: string;
+            displayName: string;
+            reactionMs: number | null;
+            tooEarly: boolean;
+            score: number;
+          };
+          ok?: boolean;
+          stats?: RoomStatsRecordInfo | null;
+        };
+
         if (!res.ok) {
-          setError(
-            action === "ready"
-              ? "Inicia sessão para marcar pronto."
-              : action === "start"
-                ? "Apenas o anfitrião pode iniciar."
-                : "Não foi possível entrar na sala."
-          );
-          return { ok: false as const };
+          const hint =
+            data.detail && data.detail !== data.error ? ` (${data.detail})` : "";
+          setError(`${data.error ?? "Não foi possível completar a ação."}${hint}`);
+          return { ok: false as const, data };
         }
-        return { ok: true as const, data: await res.json() };
+
+        if (data.playerId) {
+          saveRoomPlayerId(code, data.playerId);
+          setPlayerId(data.playerId);
+        }
+
+        return { ok: true as const, data };
       } catch {
         setError("Ligação indisponível. Tenta novamente.");
         return { ok: false as const };
@@ -41,12 +87,35 @@ export function useRoom(code: string) {
         setLoading(false);
       }
     },
-    [code]
+    [code, playerId]
   );
 
   const join = useCallback(() => runAction("join"), [runAction]);
-  const ready = useCallback(() => runAction("ready"), [runAction]);
+  const ready = useCallback(
+    () => runAction("ready", { ready: true }),
+    [runAction]
+  );
+  const unready = useCallback(() => runAction("unready"), [runAction]);
   const start = useCallback(() => runAction("start"), [runAction]);
+  const rematch = useCallback(() => runAction("rematch"), [runAction]);
+  const leave = useCallback(() => runAction("leave"), [runAction]);
+  const click = useCallback(
+    (clickedAt: number) => runAction("click", { clickedAt }),
+    [runAction]
+  );
+  const recordStats = useCallback(() => runAction("record_stats"), [runAction]);
 
-  return { loading, error, join, ready, start };
+  return {
+    loading,
+    error,
+    playerId,
+    join,
+    ready,
+    unready,
+    start,
+    rematch,
+    leave,
+    click,
+    recordStats,
+  };
 }
