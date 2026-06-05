@@ -12,9 +12,9 @@ export async function recordPlaySession(params: {
   if (!isSupabaseConfigured()) return;
 
   const supabase = await createClient();
-  const durationSeconds = Math.round(params.result.durationMs / 1000);
+  const durationSeconds = Math.max(0, Math.round(params.result.durationMs / 1000));
 
-  await supabase.from("game_sessions").insert({
+  const { error } = await supabase.from("game_sessions").insert({
     game_id: params.gameId,
     user_id: params.userId ?? null,
     guest_id: params.guestId ?? null,
@@ -23,70 +23,12 @@ export async function recordPlaySession(params: {
     ended_at: new Date().toISOString(),
   });
 
-  await logGameEvent({
-    eventType: "GAME_FINISHED",
-    gameId: params.gameId,
-    userId: params.userId,
-    payload: {
-      score: params.result.score,
-      durationSeconds,
-      guestId: params.guestId,
-    },
-  });
-
-  if (params.userId) {
-    const { data: stats } = await supabase
-      .from("user_stats")
-      .select("*")
-      .eq("user_id", params.userId)
-      .maybeSingle();
-
-    const totalGames = (stats?.total_games_played ?? stats?.games_played ?? 0) + 1;
-    const totalScore = Number(stats?.total_score ?? 0) + params.result.score;
-    const highest = Math.max(
-      Number(stats?.highest_score ?? 0),
-      params.result.score
-    );
-
-    await supabase
-      .from("user_stats")
-      .update({
-        total_games_played: totalGames,
-        total_play_time_seconds:
-          (stats?.total_play_time_seconds ?? 0) + durationSeconds,
-        total_score: totalScore,
-        highest_score: highest,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", params.userId);
+  if (error) {
+    console.error("[recordPlaySession] game_sessions insert failed:", error.message);
+    return;
   }
 
-  const { data: gameStats } = await supabase
-    .from("game_stats")
-    .select("*")
-    .eq("game_id", params.gameId)
-    .maybeSingle();
-
-  const sessions =
-    (gameStats?.total_sessions ?? gameStats?.sessions_count ?? 0) + 1;
-  const totalPlayTime =
-    Number(gameStats?.total_play_time_seconds ?? 0) + durationSeconds;
-  const highest = Math.max(
-    Number(gameStats?.highest_score ?? gameStats?.max_score ?? 0),
-    params.result.score
-  );
-
-  await supabase.from("game_stats").upsert(
-    {
-      game_id: params.gameId,
-      total_sessions: sessions,
-      total_players: gameStats?.total_players ?? gameStats?.unique_players ?? 0,
-      total_play_time_seconds: totalPlayTime,
-      highest_score: highest,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "game_id" }
-  );
+  // user_stats e game_stats são atualizados pelo trigger apply_session_stats na BD.
 }
 
 export async function submitLeaderboardScore(params: {

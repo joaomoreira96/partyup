@@ -7,6 +7,7 @@ import { RankingsPreviewSection } from "@/features/home/components/rankings-prev
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getServerI18n } from "@/i18n/get-server-i18n";
 import { getCategories, getFeaturedGames } from "@/services/game.service";
+import { getVisibleNews } from "@/services/news.service";
 import { getGlobalRankingsPreview } from "@/services/ranking.service";
 
 export async function generateMetadata() {
@@ -18,19 +19,21 @@ export async function generateMetadata() {
 }
 
 export default async function HomePage() {
-  const [featured, categories, rankings] = await Promise.all([
+  const { t, locale } = await getServerI18n();
+  const [featured, categories, rankings, news] = await Promise.all([
     getFeaturedGames(),
     getCategories(),
     getGlobalRankingsPreview(),
+    getVisibleNews(3),
   ]);
 
   return (
     <MainShell className="max-w-6xl">
       <HeroSection />
+      <NewsSection news={news} title={t("home.newsTitle")} locale={locale} />
       <FeaturedGamesSection games={featured} />
       <CategoriesSection categories={categories} />
       <RankingsPreviewSection previews={rankings} />
-      <NewsSection />
     </MainShell>
   );
 }

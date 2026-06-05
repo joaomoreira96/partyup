@@ -1,32 +1,41 @@
-"use client";
-
 import { SectionHeading } from "@/components/design/section-heading";
-import { useI18n } from "@/features/i18n/locale-provider";
+import { newsExcerpt } from "@/lib/news-excerpt";
+import type { NewsPost } from "@/types/platform";
 
-const NEWS_KEYS = [
-  { title: "home.news.item1Title", date: "home.news.item1Date", excerpt: "home.news.item1Excerpt" },
-  { title: "home.news.item2Title", date: "home.news.item2Date", excerpt: "home.news.item2Excerpt" },
-  { title: "home.news.item3Title", date: "home.news.item3Date", excerpt: "home.news.item3Excerpt" },
-] as const;
+function formatNewsDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale === "pt" ? "pt-PT" : "en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
-export function NewsSection() {
-  const { t } = useI18n();
+export function NewsSection({
+  news,
+  title,
+  locale,
+}: {
+  news: NewsPost[];
+  title: string;
+  locale: string;
+}) {
+  if (news.length === 0) return null;
 
   return (
     <section className="party-section" aria-labelledby="news-heading">
-      <SectionHeading id="news-heading" title={t("home.newsTitle")} />
+      <SectionHeading id="news-heading" title={title} />
       <ul className="grid gap-4 sm:grid-cols-3">
-        {NEWS_KEYS.map((item) => (
+        {news.map((item) => (
           <li
-            key={item.title}
+            key={item.id}
             className="party-card-premium flex flex-col gap-2 p-5"
           >
             <p className="text-xs font-medium uppercase tracking-wide text-accent">
-              {t(item.date)}
+              {formatNewsDate(item.created_at, locale)}
             </p>
-            <h3 className="font-semibold">{t(item.title)}</h3>
+            <h3 className="font-semibold">{item.title}</h3>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              {t(item.excerpt)}
+              {newsExcerpt(item.content)}
             </p>
           </li>
         ))}

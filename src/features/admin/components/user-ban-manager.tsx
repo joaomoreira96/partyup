@@ -167,7 +167,7 @@ export function UserBanManager({ initialUsers }: { initialUsers: AdminUserRow[] 
   }
 
   return (
-    <section className="mt-10">
+    <section>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold">{t("admin.users.title")}</h2>

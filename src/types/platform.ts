@@ -102,6 +102,22 @@ export interface Category {
   name: string;
 }
 
+export interface NewsPost {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  published: boolean;
+  created_at: string;
+}
+
+/** Alias usado nos componentes de news */
+export type NewsItem = NewsPost;
+
+export type AdminGameRow = GameRecord & {
+  category_ids: string[];
+};
+
 export interface GameRecord {
   id: string;
   slug: string;
