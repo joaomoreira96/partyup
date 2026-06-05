@@ -105,8 +105,10 @@ export interface Category {
 export interface NewsPost {
   id: string;
   title: string;
+  title_en: string;
   slug: string;
   content: string;
+  content_en: string;
   published: boolean;
   created_at: string;
 }

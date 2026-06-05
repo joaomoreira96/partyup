@@ -53,8 +53,10 @@ export async function listNewsForAdmin(): Promise<NewsPost[]> {
 
 export type NewsInput = {
   title: string;
+  title_en: string;
   slug?: string;
   content: string;
+  content_en: string;
   published?: boolean;
 };
 
@@ -66,23 +68,27 @@ export async function createNews(
   }
 
   const title = input.title.trim();
+  const titleEn = input.title_en.trim();
   const content = input.content.trim();
+  const contentEn = input.content_en.trim();
   if (!title) return { ok: false, error: "title_required" };
+  if (!titleEn) return { ok: false, error: "title_en_required" };
   if (!content) return { ok: false, error: "content_required" };
+  if (!contentEn) return { ok: false, error: "content_en_required" };
 
   const supabase = await createClient();
   const baseSlug = slugifyLabel(input.slug?.trim() || title);
   const slug = await resolveUniqueSlug(supabase, baseSlug);
 
-  const published = input.published === true;
-
   const { data, error } = await supabase
     .from("news_posts")
     .insert({
       title,
+      title_en: titleEn,
       slug,
       content,
-      published,
+      content_en: contentEn,
+      published: input.published === true,
     })
     .select("*")
     .single();
@@ -111,10 +117,20 @@ export async function updateNews(
     if (!title) return { ok: false, error: "title_required" };
     updates.title = title;
   }
+  if (input.title_en !== undefined) {
+    const titleEn = input.title_en.trim();
+    if (!titleEn) return { ok: false, error: "title_en_required" };
+    updates.title_en = titleEn;
+  }
   if (input.content !== undefined) {
     const content = input.content.trim();
     if (!content) return { ok: false, error: "content_required" };
     updates.content = content;
+  }
+  if (input.content_en !== undefined) {
+    const contentEn = input.content_en.trim();
+    if (!contentEn) return { ok: false, error: "content_en_required" };
+    updates.content_en = contentEn;
   }
   if (input.published !== undefined) updates.published = input.published === true;
   if (input.slug !== undefined) {

@@ -1,10 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
-function revalidateHomeNews() {
-  revalidatePath("/");
-}
 import {
   createNews,
   deleteNews,
@@ -12,6 +8,10 @@ import {
   updateNews,
 } from "@/services/news.service";
 import { isAdmin } from "@/services/auth.service";
+
+function revalidateHomeNews() {
+  revalidatePath("/");
+}
 
 export async function GET() {
   if (!(await isAdmin())) {
@@ -23,8 +23,10 @@ export async function GET() {
 
 const createSchema = z.object({
   title: z.string().min(1).max(120),
+  title_en: z.string().min(1).max(120),
   slug: z.string().min(1).max(48).optional(),
   content: z.string().min(1).max(10000),
+  content_en: z.string().min(1).max(10000),
   published: z.boolean().default(false),
 });
 
@@ -35,6 +37,14 @@ const updateSchema = createSchema.partial().extend({
 const deleteSchema = z.object({
   id: z.string().uuid(),
 });
+
+const errorMessages: Record<string, string> = {
+  title_required: "Indica o título em português.",
+  title_en_required: "Indica o título em inglês.",
+  content_required: "Indica o conteúdo em português.",
+  content_en_required: "Indica o conteúdo em inglês.",
+  slug_taken: "Este slug já existe.",
+};
 
 export async function POST(request: Request) {
   if (!(await isAdmin())) {
@@ -52,15 +62,10 @@ export async function POST(request: Request) {
     published: parsed.data.published === true,
   });
   if (!result.ok) {
-    const message =
-      result.error === "title_required"
-        ? "Indica o título."
-        : result.error === "content_required"
-          ? "Indica o conteúdo."
-          : result.error === "slug_taken"
-            ? "Este slug já existe."
-            : "Não foi possível criar a news.";
-    return NextResponse.json({ message }, { status: 400 });
+    return NextResponse.json(
+      { message: errorMessages[result.error] ?? "Não foi possível criar a news." },
+      { status: 400 }
+    );
   }
 
   revalidateHomeNews();
@@ -86,13 +91,15 @@ export async function PATCH(request: Request) {
       : {}),
   });
   if (!result.ok) {
-    const message =
-      result.error === "not_found"
-        ? "News não encontrada."
-        : result.error === "slug_taken"
-          ? "Este slug já existe."
-          : "Não foi possível atualizar a news.";
-    return NextResponse.json({ message }, { status: 400 });
+    return NextResponse.json(
+      {
+        message:
+          result.error === "not_found"
+            ? "News não encontrada."
+            : (errorMessages[result.error] ?? "Não foi possível atualizar a news."),
+      },
+      { status: 400 }
+    );
   }
 
   revalidateHomeNews();

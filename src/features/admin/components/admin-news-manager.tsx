@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Eye, EyeOff, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { getNewsContent, getNewsTitle } from "@/lib/news-localized";
 import { newsExcerpt } from "@/lib/news-excerpt";
 import { slugifyLabel } from "@/lib/slugify";
 import type { NewsPost } from "@/types/platform";
@@ -17,26 +18,33 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type NewsForm = {
   title: string;
+  title_en: string;
   slug: string;
   content: string;
+  content_en: string;
   published: boolean;
 };
 
 const emptyForm = (): NewsForm => ({
   title: "",
+  title_en: "",
   slug: "",
   content: "",
+  content_en: "",
   published: false,
 });
 
 function toForm(item: NewsPost): NewsForm {
   return {
     title: item.title,
+    title_en: item.title_en,
     slug: item.slug,
     content: item.content,
+    content_en: item.content_en,
     published: item.published,
   };
 }
@@ -81,17 +89,28 @@ export function AdminNewsManager({ initialNews }: { initialNews: NewsPost[] }) {
     setItems(data.news);
   }
 
-  async function saveNews() {
+  function validateForm(): boolean {
     if (!form.title.trim() || !form.content.trim()) {
-      toast.error("Título e conteúdo são obrigatórios.");
-      return;
+      toast.error("Preenche título e conteúdo em português.");
+      return false;
     }
+    if (!form.title_en.trim() || !form.content_en.trim()) {
+      toast.error("Preenche título e conteúdo em inglês.");
+      return false;
+    }
+    return true;
+  }
+
+  async function saveNews() {
+    if (!validateForm()) return;
 
     setSaving(true);
     try {
       const payload = {
         title: form.title.trim(),
+        title_en: form.title_en.trim(),
         content: form.content.trim(),
+        content_en: form.content_en.trim(),
         published: form.published,
         ...(form.slug.trim() ? { slug: form.slug.trim() } : {}),
       };
@@ -165,7 +184,7 @@ export function AdminNewsManager({ initialNews }: { initialNews: NewsPost[] }) {
         <div>
           <h2 className="text-lg font-semibold">News</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Publicadas na homepage; rascunhos só aparecem aqui.
+            Conteúdo em português e inglês. Publicadas na homepage; rascunhos só aqui.
           </p>
         </div>
         <Button onClick={openCreate}>
@@ -203,8 +222,11 @@ export function AdminNewsManager({ initialNews }: { initialNews: NewsPost[] }) {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {formatNewsDate(item.created_at)} · /{item.slug}
                 </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  EN: {getNewsTitle(item, "en")}
+                </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {newsExcerpt(item.content)}
+                  {newsExcerpt(getNewsContent(item, "pt"))}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -240,47 +262,84 @@ export function AdminNewsManager({ initialNews }: { initialNews: NewsPost[] }) {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="news-title">Título</Label>
-              <Input
-                id="news-title"
-                value={form.title}
-                onChange={(e) => {
-                  const title = e.target.value;
-                  setForm((f) => ({
-                    ...f,
-                    title,
-                    slug:
-                      !editingId && !f.slug
-                        ? slugifyLabel(title)
-                        : f.slug,
-                  }));
-                }}
-                maxLength={120}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="news-slug">Slug</Label>
+              <Label htmlFor="news-slug">Slug (URL)</Label>
               <Input
                 id="news-slug"
                 value={form.slug}
                 onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-                placeholder="gerado-automaticamente"
+                placeholder="gerado-a-partir-do-titulo-pt"
                 maxLength={48}
                 spellCheck={false}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="news-content">Conteúdo</Label>
-              <textarea
-                id="news-content"
-                className="flex min-h-32 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                value={form.content}
-                onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-                maxLength={10000}
-                required
-              />
-            </div>
+
+            <Tabs defaultValue="pt">
+              <TabsList className="w-full">
+                <TabsTrigger value="pt" className="flex-1">
+                  Português
+                </TabsTrigger>
+                <TabsTrigger value="en" className="flex-1">
+                  English
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="pt" className="mt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="news-title-pt">Título (PT)</Label>
+                  <Input
+                    id="news-title-pt"
+                    value={form.title}
+                    onChange={(e) => {
+                      const title = e.target.value;
+                      setForm((f) => ({
+                        ...f,
+                        title,
+                        slug:
+                          !editingId && !f.slug
+                            ? slugifyLabel(title)
+                            : f.slug,
+                      }));
+                    }}
+                    maxLength={120}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="news-content-pt">Conteúdo (PT)</Label>
+                  <textarea
+                    id="news-content-pt"
+                    className="flex min-h-32 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    value={form.content}
+                    onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
+                    maxLength={10000}
+                    required
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="en" className="mt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="news-title-en">Title (EN)</Label>
+                  <Input
+                    id="news-title-en"
+                    value={form.title_en}
+                    onChange={(e) => setForm((f) => ({ ...f, title_en: e.target.value }))}
+                    maxLength={120}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="news-content-en">Content (EN)</Label>
+                  <textarea
+                    id="news-content-en"
+                    className="flex min-h-32 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    value={form.content_en}
+                    onChange={(e) => setForm((f) => ({ ...f, content_en: e.target.value }))}
+                    maxLength={10000}
+                    required
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"

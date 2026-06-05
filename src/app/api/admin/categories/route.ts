@@ -44,13 +44,28 @@ export async function POST(request: Request) {
 
   const result = await createCategory(parsed.data);
   if (!result.ok) {
+    const messages: Record<string, string> = {
+      slug_taken: "Este slug já existe.",
+      name_required: "Indica o nome da categoria.",
+      slug_required: "Slug inválido.",
+      forbidden: "Sem permissão de admin. Confirma que o teu perfil tem role = admin.",
+      rpc_not_found:
+        "Função admin_create_category não encontrada. Volta a executar a migration e recarrega o schema do Supabase.",
+    };
     const message =
-      result.error === "slug_taken"
-        ? "Este slug já existe."
-        : result.error === "name_required"
-          ? "Indica o nome da categoria."
-          : "Não foi possível criar a categoria.";
-    return NextResponse.json({ message }, { status: 400 });
+      messages[result.error] ??
+      (result.error.startsWith("create_failed:")
+        ? "A categoria foi criada mas a resposta foi inesperada. Recarrega a página."
+        : result.error.includes(" ")
+          ? result.error
+          : "Não foi possível criar a categoria.");
+    return NextResponse.json(
+      {
+        message,
+        detail: result.error,
+      },
+      { status: 400 }
+    );
   }
 
   return NextResponse.json({ category: result.category });

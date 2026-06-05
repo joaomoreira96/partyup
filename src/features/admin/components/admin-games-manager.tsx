@@ -39,9 +39,14 @@ export function AdminGamesManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
-      const data = (await res.json()) as { message?: string; category?: Category };
+      const data = (await res.json()) as {
+        message?: string;
+        detail?: string;
+        category?: Category;
+      };
       if (!res.ok) {
-        toast.error(data.message ?? "Não foi possível criar a categoria.");
+        const hint = data.detail && data.detail !== data.message ? ` (${data.detail})` : "";
+        toast.error(`${data.message ?? "Não foi possível criar a categoria."}${hint}`);
         return;
       }
       if (data.category) {

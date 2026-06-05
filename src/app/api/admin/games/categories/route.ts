@@ -26,7 +26,10 @@ export async function PATCH(request: Request) {
         message:
           result.error === "game_not_found"
             ? "Jogo não encontrado."
-            : "Não foi possível atualizar as categorias do jogo.",
+            : result.error === "forbidden"
+              ? "Acesso negado."
+              : "Não foi possível atualizar as categorias do jogo.",
+        detail: process.env.NODE_ENV === "development" ? result.error : undefined,
       },
       { status: 400 }
     );
