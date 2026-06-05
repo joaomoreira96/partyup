@@ -326,10 +326,50 @@ export const dictionary = {
     loginSubtitle: "Opcional para jogar — necessário para rankings e conquistas.",
     registerSubtitle:
       "Guarda progresso, entra nos rankings e desbloqueia conquistas.",
+    forgotPasswordLink: "Esqueceste a palavra-passe?",
+    forgotPassword: {
+      title: "Recuperar palavra-passe",
+      subtitle:
+        "Indica o teu email e enviamos um link para definires uma nova palavra-passe.",
+      submit: "Enviar link de recuperação",
+      success:
+        "Se existir uma conta com esse email, vais receber um link em breve. Verifica a caixa de entrada e o spam.",
+      successHint:
+        "Se não receberes nada, espera alguns minutos antes de pedir outro link — há limites de envio de emails.",
+      backToLogin: "Voltar ao login",
+      errors: {
+        rateLimit:
+          "Limite de emails de autenticação atingido. Espera cerca de 1 hora ou configura SMTP personalizado no Supabase (Authentication → Rate Limits).",
+        tooSoon:
+          "Já pediste um link há pouco. Espera cerca de 1 minuto antes de tentar outra vez.",
+        invalidEmail: "Indica um endereço de email válido.",
+        generic: "Não foi possível enviar o email. Tenta novamente dentro de instantes.",
+      },
+    },
+    resetPassword: {
+      title: "Nova palavra-passe",
+      subtitle: "Escolhe uma nova palavra-passe para a tua conta.",
+      newPassword: "Nova palavra-passe",
+      confirmPassword: "Confirmar palavra-passe",
+      submit: "Atualizar palavra-passe",
+      success: "Palavra-passe atualizada. Já podes entrar com a nova palavra-passe.",
+      invalidLink: "Este link de recuperação é inválido ou expirou.",
+      requestNew: "Pedir novo link",
+      mismatch: "As palavras-passe não coincidem.",
+      samePassword: "Escolhe uma palavra-passe diferente da atual.",
+      errors: {
+        generic: "Não foi possível atualizar a palavra-passe. Tenta novamente.",
+      },
+    },
     errors: {
       invalidLogin: "Email ou palavra-passe incorretos.",
       alreadyRegistered: "Este email já está registado.",
       passwordMin: "A palavra-passe deve ter pelo menos 6 caracteres.",
+      tagTaken: "Esta tag já está a ser usada. Escolhe outra.",
+      bannedPermanent:
+        "A tua conta está suspensa permanentemente. Motivo: {reason}",
+      bannedUntil: "A tua conta está suspensa até {until}. Motivo: {reason}",
+      bannedNoReason: "Não indicado",
       generic:
         "Não foi possível concluir o pedido. Verifica os dados e tenta novamente.",
     },
@@ -338,6 +378,33 @@ export const dictionary = {
       tooShort: "A tag deve ter pelo menos 3 caracteres.",
       tooLong: "A tag pode ter no máximo 20 caracteres.",
       invalid: "Usa apenas letras minúsculas, números e underscore (_).",
+    },
+  },
+  admin: {
+    users: {
+      title: "Utilizadores",
+      subtitle: "Banir ou reativar contas. Administradores não podem ser banidos.",
+      search: "Pesquisar utilizadores",
+      searchPlaceholder: "Tag ou nome...",
+      empty: "Nenhum utilizador encontrado.",
+      loadError: "Não foi possível carregar utilizadores.",
+      saveError: "Não foi possível guardar a alteração.",
+      banApplied: "Utilizador banido.",
+      unbanApplied: "Ban removido.",
+      statusActive: "Ativo",
+      statusBannedPermanent: "Ban permanente",
+      statusBannedUntil: "Ban até {until}",
+      roleAdmin: "Admin",
+      ban: "Banir",
+      unban: "Remover ban",
+      banTitle: "Banir utilizador",
+      banDescription: "Suspender a conta de {name}.",
+      reasonLabel: "Motivo",
+      reasonRequired: "Indica o motivo do ban.",
+      permanentBan: "Ban permanente",
+      untilLabel: "Ban até",
+      untilRequired: "Indica a data de fim do ban.",
+      confirmBan: "Confirmar ban",
     },
   },
   room: {

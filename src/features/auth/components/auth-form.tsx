@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { signOutIfBanned } from "@/lib/auth/check-ban-client";
+import { bootstrapRegistrationProfile } from "@/lib/profile/bootstrap-registration-profile";
+import { isUsernameAvailableClient } from "@/lib/profile/save-profile-client";
 import {
   normalizeUsername,
   suggestUsernameFromDisplayName,
@@ -19,7 +22,7 @@ import { Label } from "@/components/ui/label";
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const { refresh } = useUser();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -32,6 +35,18 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     if (message.includes("already registered")) return t("auth.errors.alreadyRegistered");
     if (message.includes("Password")) return t("auth.errors.passwordMin");
     return t("auth.errors.generic");
+  }
+
+  function mapBanError(ban: { reason: string | null; until: string | null }): string {
+    if (ban.until) {
+      return t("auth.errors.bannedUntil", {
+        until: ban.until,
+        reason: ban.reason ?? t("auth.errors.bannedNoReason"),
+      });
+    }
+    return t("auth.errors.bannedPermanent", {
+      reason: ban.reason ?? t("auth.errors.bannedNoReason"),
+    });
   }
 
   if (!isSupabaseConfigured()) {
@@ -66,6 +81,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         return;
       }
 
+      const tagAvailable = await isUsernameAvailableClient(username, "");
+      if (!tagAvailable) {
+        setError(t("auth.errors.tagTaken"));
+        setLoading(false);
+        return;
+      }
+
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -81,6 +103,16 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         setLoading(false);
         return;
       }
+
+      const bootstrap = await bootstrapRegistrationProfile({
+        display_name: name,
+        username,
+      });
+      if (!bootstrap.ok) {
+        setError(bootstrap.message);
+        setLoading(false);
+        return;
+      }
     } else {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
@@ -90,6 +122,18 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         setError(mapAuthError(signInError.message));
         setLoading(false);
         return;
+      }
+
+      const {
+        data: { user: signedInUser },
+      } = await supabase.auth.getUser();
+      if (signedInUser) {
+        const ban = await signOutIfBanned(signedInUser.id, locale);
+        if (ban.banned) {
+          setError(mapBanError(ban));
+          setLoading(false);
+          return;
+        }
       }
     }
 
@@ -142,7 +186,17 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">{t("auth.password")}</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="password">{t("auth.password")}</Label>
+          {mode === "login" && (
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-primary underline"
+            >
+              {t("auth.forgotPasswordLink")}
+            </Link>
+          )}
+        </div>
         <Input
           id="password"
           type="password"

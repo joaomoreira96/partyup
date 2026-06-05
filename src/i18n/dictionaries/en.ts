@@ -327,10 +327,48 @@ export const dictionary: Dictionary = {
     loginSubtitle: "Optional to play — required for rankings and achievements.",
     registerSubtitle:
       "Save progress, join leaderboards and unlock achievements.",
+    forgotPasswordLink: "Forgot password?",
+    forgotPassword: {
+      title: "Reset password",
+      subtitle: "Enter your email and we'll send you a link to set a new password.",
+      submit: "Send reset link",
+      success:
+        "If an account exists for that email, you'll receive a reset link shortly. Check your inbox and spam folder.",
+      successHint:
+        "If nothing arrives, wait a few minutes before requesting another link — auth emails are rate limited.",
+      backToLogin: "Back to log in",
+      errors: {
+        rateLimit:
+          "Authentication email limit reached. Wait about an hour, or set up custom SMTP in Supabase (Authentication → Rate Limits).",
+        tooSoon:
+          "You requested a link recently. Wait about a minute before trying again.",
+        invalidEmail: "Enter a valid email address.",
+        generic: "Could not send the reset email. Try again in a moment.",
+      },
+    },
+    resetPassword: {
+      title: "New password",
+      subtitle: "Choose a new password for your account.",
+      newPassword: "New password",
+      confirmPassword: "Confirm password",
+      submit: "Update password",
+      success: "Password updated. You can log in with your new password.",
+      invalidLink: "This reset link is invalid or has expired.",
+      requestNew: "Request a new link",
+      mismatch: "Passwords do not match.",
+      samePassword: "Choose a different password from your current one.",
+      errors: {
+        generic: "Could not update your password. Try again.",
+      },
+    },
     errors: {
       invalidLogin: "Incorrect email or password.",
       alreadyRegistered: "This email is already registered.",
       passwordMin: "Password must be at least 6 characters.",
+      tagTaken: "This tag is already taken. Choose another.",
+      bannedPermanent: "Your account is permanently suspended. Reason: {reason}",
+      bannedUntil: "Your account is suspended until {until}. Reason: {reason}",
+      bannedNoReason: "Not specified",
       generic: "Could not complete the request. Check your details and try again.",
     },
     usernameErrors: {
@@ -338,6 +376,33 @@ export const dictionary: Dictionary = {
       tooShort: "Tag must be at least 3 characters.",
       tooLong: "Tag can be at most 20 characters.",
       invalid: "Use only lowercase letters, numbers and underscore (_).",
+    },
+  },
+  admin: {
+    users: {
+      title: "Users",
+      subtitle: "Ban or restore accounts. Administrators cannot be banned.",
+      search: "Search users",
+      searchPlaceholder: "Tag or name...",
+      empty: "No users found.",
+      loadError: "Could not load users.",
+      saveError: "Could not save the change.",
+      banApplied: "User banned.",
+      unbanApplied: "Ban removed.",
+      statusActive: "Active",
+      statusBannedPermanent: "Permanent ban",
+      statusBannedUntil: "Banned until {until}",
+      roleAdmin: "Admin",
+      ban: "Ban",
+      unban: "Remove ban",
+      banTitle: "Ban user",
+      banDescription: "Suspend the account of {name}.",
+      reasonLabel: "Reason",
+      reasonRequired: "Enter a ban reason.",
+      permanentBan: "Permanent ban",
+      untilLabel: "Banned until",
+      untilRequired: "Enter the ban end date.",
+      confirmBan: "Confirm ban",
     },
   },
   room: {

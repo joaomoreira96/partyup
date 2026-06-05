@@ -2,7 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MainShell } from "@/components/layout/main-shell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { UserBanManager } from "@/features/admin/components/user-ban-manager";
 import { getCurrentProfile, isAdmin } from "@/services/auth.service";
+import { listUsersForAdmin } from "@/services/admin.service";
 import { getPublishedGames } from "@/services/game.service";
 import { countActiveRooms } from "@/services/room.service";
 import { Badge } from "@/components/ui/badge";
@@ -30,9 +32,10 @@ export default async function AdminPage() {
 
   if (!(await isAdmin())) redirect("/profile");
 
-  const [games, roomsCount] = await Promise.all([
+  const [games, roomsCount, users] = await Promise.all([
     getPublishedGames(),
     countActiveRooms(),
+    listUsersForAdmin(),
   ]);
 
   return (
@@ -52,6 +55,8 @@ export default async function AdminPage() {
           <p className="text-sm text-muted-foreground">Salas (DB)</p>
         </div>
       </section>
+
+      <UserBanManager initialUsers={users} />
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold">Jogos</h2>

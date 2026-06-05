@@ -37,17 +37,54 @@ export async function ensureProfileForUser(user: User) {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (existing) return { ok: true as const };
-
   const meta = user.user_metadata ?? {};
+  const displayName =
+    (typeof meta.display_name === "string" && meta.display_name.trim()) ||
+    user.email?.split("@")[0] ||
+    "Jogador";
+  const username =
+    typeof meta.username === "string" && meta.username.trim()
+      ? meta.username.trim()
+      : null;
+
+  if (existing) {
+    const updates: {
+      display_name?: string;
+      username?: string | null;
+      updated_at: string;
+    } = { updated_at: new Date().toISOString() };
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("display_name, username")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile && !profile.display_name?.trim()) {
+      updates.display_name = displayName;
+    }
+    if (profile && !profile.username?.trim() && username) {
+      updates.username = username;
+    }
+
+    if (updates.display_name || updates.username) {
+      const { error } = await supabase
+        .from("profiles")
+        .update(updates)
+        .eq("id", user.id);
+
+      if (error) {
+        return { ok: false as const, error: error.message, code: error.code };
+      }
+    }
+
+    return { ok: true as const };
+  }
+
   const { error } = await supabase.from("profiles").insert({
     id: user.id,
-    display_name:
-      (typeof meta.display_name === "string" && meta.display_name) ||
-      user.email?.split("@")[0] ||
-      "Jogador",
-    username:
-      typeof meta.username === "string" ? meta.username : null,
+    display_name: displayName,
+    username,
   });
 
   if (error) {

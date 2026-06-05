@@ -116,12 +116,11 @@ export async function isUsernameAvailableClient(
   userId: string
 ): Promise<boolean> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("username", username)
-    .neq("id", userId)
-    .maybeSingle();
+  let query = supabase.from("profiles").select("id").eq("username", username);
+  if (userId) {
+    query = query.neq("id", userId);
+  }
+  const { data, error } = await query.maybeSingle();
 
   if (error) return false;
   return !data;

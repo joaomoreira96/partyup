@@ -8,8 +8,9 @@ import {
   useMemo,
   useState,
 } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { signOutIfBanned } from "@/lib/auth/check-ban-client";
+import { useI18n } from "@/features/i18n/locale-provider";
 import type { Profile } from "@/types/platform";
 import type { User } from "@supabase/supabase-js";
 
@@ -23,6 +24,7 @@ type UserContextValue = {
 const UserContext = createContext<UserContextValue | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
+  const { locale } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(isSupabaseConfigured());
@@ -38,6 +40,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       data: { user: authUser },
     } = await supabase.auth.getUser();
 
+    if (authUser) {
+      const ban = await signOutIfBanned(authUser.id, locale);
+      if (ban.banned) {
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+    }
+
     setUser(authUser);
 
     if (authUser) {
@@ -52,7 +64,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
 
     setLoading(false);
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     void refresh();

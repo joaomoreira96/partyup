@@ -28,10 +28,25 @@ export interface Profile {
   show_activity?: boolean;
   show_country?: boolean;
   role: UserRole;
+  is_banned?: boolean;
+  banned_until?: string | null;
+  ban_reason?: string | null;
   created_at: string;
   updated_at?: string;
   deleted_at?: string | null;
 }
+
+export type AdminUserRow = Pick<
+  Profile,
+  | "id"
+  | "username"
+  | "display_name"
+  | "role"
+  | "is_banned"
+  | "banned_until"
+  | "ban_reason"
+  | "created_at"
+>;
 
 export type TopGameStat = {
   gameId: string;
