@@ -7,6 +7,8 @@ import { resolveGameModuleId } from "@/lib/games/resolve-module-id";
 import { loadGameModule } from "@/lib/games/registry";
 import { createPartyUpSDK, PartyUpSdkError } from "@/lib/partyup-sdk";
 import { getGuestId, getGuestName } from "@/lib/guest";
+import { leaveRoomSession } from "@/lib/rooms/leave-room";
+import { getRoomPlayerId } from "@/lib/rooms/player-session";
 import { getMaxScoreForModule, getMetricForGame } from "@/lib/games/metrics";
 import type { GameRecord } from "@/types/platform";
 import { useI18n } from "@/features/i18n/locale-provider";
@@ -147,6 +149,18 @@ export function GamePlayer({
     showFriendlyError,
     t,
   ]);
+
+  useEffect(() => {
+    if (!roomCode) return;
+
+    const onPageHide = () => leaveRoomSession(roomCode, getRoomPlayerId(roomCode));
+    window.addEventListener("pagehide", onPageHide);
+
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      leaveRoomSession(roomCode, getRoomPlayerId(roomCode));
+    };
+  }, [roomCode]);
 
   if (!game.guest_allowed && isGuest) {
     return (

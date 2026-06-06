@@ -8,6 +8,7 @@ import { roomPlayerLabel } from "@/lib/rooms/player-label";
 import { useDuelRoom } from "@/hooks/use-duel-room";
 import { useRoom } from "@/hooks/use-room";
 import { getGuestName, setGuestName } from "@/lib/guest";
+import { leaveRoomSession } from "@/lib/rooms/leave-room";
 import { getRoomPlayerId } from "@/lib/rooms/player-session";
 import { useI18n } from "@/features/i18n/locale-provider";
 import { getGameName } from "@/lib/game-localized";
@@ -17,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveDuelMetadataCache } from "@/lib/rooms/duel-meta-cache";
 import { parseDuelMetadata } from "@/lib/rooms/duel-state";
+import { RoomCodeDisplay } from "@/features/rooms/components/room-code-display";
 import { toast } from "sonner";
 
 function registeredDisplayName(profile: Pick<Profile, "display_name" | "username">): string {
@@ -141,6 +143,20 @@ export function RoomLobby({
     return () => window.clearInterval(interval);
   }, [hydrated, hasJoined, isRegistered, refresh]);
 
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const onPageHide = () => {
+      if (getRoomPlayerId(code)) leaveRoomSession(code);
+    };
+
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      if (getRoomPlayerId(code)) leaveRoomSession(code);
+    };
+  }, [hydrated, code]);
+
   async function toggleReady() {
     const nextReady = !isReady;
     setReadyPending(nextReady);
@@ -200,13 +216,7 @@ export function RoomLobby({
   return (
     <div className="space-y-6">
       <div className="party-card-premium border-secondary/20 bg-gradient-to-br from-secondary/10 to-transparent p-6 text-center">
-        <p className="text-sm text-muted-foreground">{t("room.roomCodeLabel")}</p>
-        <p
-          className="mt-2 font-mono text-3xl font-bold tracking-[0.2em] text-primary sm:text-4xl"
-          aria-label={`${t("room.roomCodeLabel")} ${code}`}
-        >
-          {code}
-        </p>
+        <RoomCodeDisplay code={code} />
         <p className="mt-2 text-sm font-medium">{getGameName(game, locale)}</p>
         {offline && (
           <p className="mt-3 text-xs text-warning" role="status">

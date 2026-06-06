@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import { MainShell } from "@/components/layout/main-shell";
 import { SectionHeading } from "@/components/design/section-heading";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 import { EmptyState } from "@/components/shared/page-states";
+import { DEFAULT_PAGE_SIZE, paginateSlice, parsePageParam } from "@/lib/pagination";
 import { CatalogFilters } from "@/features/games/components/catalog-filters";
 import { GameCard } from "@/features/games/components/game-card";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -27,6 +29,7 @@ interface PageProps {
     desktop?: string;
     multiplayer?: string;
     device?: string;
+    page?: string;
   }>;
 }
 
@@ -64,6 +67,9 @@ export default async function GamesCatalogPage({ searchParams }: PageProps) {
   ]);
 
   const favoriteSet = new Set(favoriteIds);
+  const catalogPage = parsePageParam(params.page);
+  const catalogPagination = paginateSlice(games, catalogPage, DEFAULT_PAGE_SIZE);
+  const pagedGames = catalogPagination.items;
 
   return (
     <MainShell>
@@ -91,10 +97,10 @@ export default async function GamesCatalogPage({ searchParams }: PageProps) {
       <section className="party-section" aria-labelledby="games-list-heading">
         <SectionHeading
           id="games-list-heading"
-          title={t("games.countAvailable", { count: games.length })}
+          title={t("games.countAvailable", { count: catalogPagination.totalItems })}
         />
 
-        {games.length === 0 ? (
+        {catalogPagination.totalItems === 0 ? (
           <EmptyState
             title={t("games.emptyTitle")}
             description={t("games.emptyDescription")}
@@ -102,17 +108,29 @@ export default async function GamesCatalogPage({ searchParams }: PageProps) {
             actionHref="/games"
           />
         ) : (
-          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {games.map((game) => (
-              <li key={game.id}>
-                <GameCard
-                  game={game}
-                  initialIsFavorite={favoriteSet.has(game.id)}
-                  showFavoriteToggle={Boolean(user)}
-                />
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {pagedGames.map((game) => (
+                <li key={game.id}>
+                  <GameCard
+                    game={game}
+                    initialIsFavorite={favoriteSet.has(game.id)}
+                    showFavoriteToggle={Boolean(user)}
+                  />
+                </li>
+              ))}
+            </ul>
+            <Suspense fallback={null}>
+              <PaginationControls
+                page={catalogPagination.page}
+                totalPages={catalogPagination.totalPages}
+                totalItems={catalogPagination.totalItems}
+                rangeStart={catalogPagination.rangeStart}
+                rangeEnd={catalogPagination.rangeEnd}
+                className="mt-8"
+              />
+            </Suspense>
+          </>
         )}
       </section>
     </MainShell>

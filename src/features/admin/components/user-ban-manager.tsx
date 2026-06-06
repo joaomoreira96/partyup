@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Loader2, ShieldBan, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { formatBanUntil, isBanActive } from "@/lib/auth/ban";
@@ -18,6 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PaginationControls } from "@/components/shared/pagination-controls";
+import { ADMIN_PAGE_SIZE, paginateSlice, parsePageParam } from "@/lib/pagination";
 
 type BanFormState = {
   permanent: boolean;
@@ -33,7 +36,14 @@ const emptyBanForm = (): BanFormState => ({
 
 export function UserBanManager({ initialUsers }: { initialUsers: AdminUserRow[] }) {
   const { t, locale } = useI18n();
+  const searchParams = useSearchParams();
   const [users, setUsers] = useState(initialUsers);
+  const usersPage = parsePageParam(searchParams.get("page"));
+  const usersPagination = useMemo(
+    () => paginateSlice(users, usersPage, ADMIN_PAGE_SIZE),
+    [users, usersPage]
+  );
+  const pagedUsers = usersPagination.items;
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<AdminUserRow | null>(null);
@@ -197,7 +207,7 @@ export function UserBanManager({ initialUsers }: { initialUsers: AdminUserRow[] 
             {t("admin.users.empty")}
           </li>
         ) : (
-          users.map((user) => (
+          pagedUsers.map((user) => (
             <li
               key={user.id}
               className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3"
@@ -251,6 +261,15 @@ export function UserBanManager({ initialUsers }: { initialUsers: AdminUserRow[] 
           ))
         )}
       </ul>
+
+      <PaginationControls
+        page={usersPagination.page}
+        totalPages={usersPagination.totalPages}
+        totalItems={usersPagination.totalItems}
+        rangeStart={usersPagination.rangeStart}
+        rangeEnd={usersPagination.rangeEnd}
+        className="mt-4"
+      />
 
       <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent>

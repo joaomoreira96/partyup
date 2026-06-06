@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2, Plus, Power, PowerOff, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/features/i18n/locale-provider";
 import { getCategoryName } from "@/lib/category-localized";
@@ -12,6 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PaginationControls } from "@/components/shared/pagination-controls";
+import { normalizeGameStatus } from "@/lib/db/mappers";
+import { ADMIN_PAGE_SIZE, paginateSlice, parsePageParam } from "@/lib/pagination";
+import { cn } from "@/lib/utils";
 
 type AdminGamesManagerProps = {
   initialCategories: Category[];
@@ -23,6 +27,7 @@ export function AdminGamesManager({
   initialGames,
 }: AdminGamesManagerProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { locale } = useI18n();
   const [categories, setCategories] = useState(initialCategories);
   const sortedCategories = useMemo(
@@ -37,6 +42,15 @@ export function AdminGamesManager({
   const [newCategoryNameEn, setNewCategoryNameEn] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [savingGameId, setSavingGameId] = useState<string | null>(null);
+  const [savingFeaturedId, setSavingFeaturedId] = useState<string | null>(null);
+  const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
+
+  const gamesPage = parsePageParam(searchParams.get("page"));
+  const gamesPagination = useMemo(
+    () => paginateSlice(games, gamesPage, ADMIN_PAGE_SIZE),
+    [games, gamesPage]
+  );
+  const pagedGames = gamesPagination.items;
   const [draftCategories, setDraftCategories] = useState<Record<string, string[]>>(() =>
     Object.fromEntries(initialGames.map((g) => [g.id, g.category_ids]))
   );
@@ -115,6 +129,67 @@ export function AdminGamesManager({
           : [...current, categoryId],
       };
     });
+  }
+
+  async function toggleGameStatus(gameId: string, activate: boolean) {
+    const status = activate ? "active" : "disabled";
+    setSavingStatusId(gameId);
+    try {
+      const res = await fetch("/api/admin/games/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId, status }),
+      });
+      const data = (await res.json()) as { message?: string };
+      if (!res.ok) {
+        toast.error(data.message ?? "Não foi possível atualizar o estado do jogo.");
+        return;
+      }
+
+      setGames((prev) =>
+        prev.map((g) =>
+          g.id === gameId
+            ? {
+                ...g,
+                status,
+                featured: status === "disabled" ? false : g.featured,
+              }
+            : g
+        )
+      );
+      toast.success(activate ? "Jogo ativado." : "Jogo desativado.");
+      router.refresh();
+    } catch {
+      toast.error("Erro de ligação.");
+    } finally {
+      setSavingStatusId(null);
+    }
+  }
+
+  async function toggleFeatured(gameId: string, featured: boolean) {
+    setSavingFeaturedId(gameId);
+    try {
+      const res = await fetch("/api/admin/games/featured", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId, featured }),
+      });
+      const data = (await res.json()) as { message?: string };
+      if (!res.ok) {
+        toast.error(data.message ?? "Não foi possível atualizar o destaque.");
+        return;
+      }
+
+      setGames((prev) =>
+        prev.map((g) => (g.id === gameId ? { ...g, featured } : g))
+      );
+      toast.success(featured ? "Jogo adicionado aos destaques." : "Jogo removido dos destaques.");
+      router.refresh();
+    } catch {
+      toast.error("Erro de ligação.");
+    } finally {
+      setSavingFeaturedId(null);
+    }
   }
 
   async function saveGameCategories(gameId: string) {
@@ -233,21 +308,71 @@ export function AdminGamesManager({
             Nenhum jogo na base de dados.
           </p>
         ) : (
+          <>
           <ul className="mt-4 space-y-4">
-            {games.map((game) => {
+            {pagedGames.map((game) => {
               const selected = draftCategories[game.id] ?? [];
               const dirty =
                 JSON.stringify([...selected].sort()) !==
                 JSON.stringify([...game.category_ids].sort());
+              const normalizedStatus = normalizeGameStatus(game.status);
+              const isActive = normalizedStatus === "active";
 
               return (
-                <li key={game.id} className="rounded-lg border p-4">
+                <li
+                  key={game.id}
+                  className={cn(
+                    "rounded-lg border p-4",
+                    !isActive && "opacity-75"
+                  )}
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-medium">{getGameName(game, locale)}</p>
                       <p className="text-xs text-muted-foreground">{game.slug}</p>
                     </div>
-                    <Badge variant="outline">{game.status}</Badge>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={game.featured ? "default" : "outline"}
+                        disabled={
+                          savingFeaturedId === game.id ||
+                          !isActive
+                        }
+                        aria-pressed={!!game.featured}
+                        onClick={() => void toggleFeatured(game.id, !game.featured)}
+                      >
+                        {savingFeaturedId === game.id ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden />
+                        ) : (
+                          <Star
+                            className={cn("size-4", game.featured && "fill-current")}
+                            aria-hidden
+                          />
+                        )}
+                        Destaques
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isActive ? "outline" : "secondary"}
+                        disabled={savingStatusId === game.id}
+                        onClick={() => void toggleGameStatus(game.id, !isActive)}
+                      >
+                        {savingStatusId === game.id ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden />
+                        ) : isActive ? (
+                          <PowerOff className="size-4" aria-hidden />
+                        ) : (
+                          <Power className="size-4" aria-hidden />
+                        )}
+                        {isActive ? "Desativar" : "Ativar"}
+                      </Button>
+                      <Badge variant={isActive ? "outline" : "secondary"}>
+                        {isActive ? "Ativo" : normalizedStatus === "draft" ? "Rascunho" : "Desativado"}
+                      </Badge>
+                    </div>
                   </div>
 
                   {sortedCategories.length === 0 ? (
@@ -298,6 +423,15 @@ export function AdminGamesManager({
               );
             })}
           </ul>
+          <PaginationControls
+            page={gamesPagination.page}
+            totalPages={gamesPagination.totalPages}
+            totalItems={gamesPagination.totalItems}
+            rangeStart={gamesPagination.rangeStart}
+            rangeEnd={gamesPagination.rangeEnd}
+            className="mt-4"
+          />
+          </>
         )}
       </section>
     </div>

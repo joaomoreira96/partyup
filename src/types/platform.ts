@@ -143,6 +143,7 @@ export interface GameRecord {
   supports_tablet: boolean;
   supports_mobile: boolean;
   featured?: boolean;
+  created_at?: string;
   status: GameStatus;
   categories?: Category[];
   active_build?: GameBuild | null;

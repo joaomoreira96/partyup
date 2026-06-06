@@ -7,7 +7,7 @@ type AdminOverviewProps = {
 export function AdminOverview({ gamesCount, roomsCount, usersCount }: AdminOverviewProps) {
   const cards = [
     { label: "Jogos publicados", value: gamesCount },
-    { label: "Salas ativas", value: roomsCount },
+    { label: "Salas ocupadas", value: roomsCount },
     { label: "Utilizadores", value: usersCount },
   ];
 

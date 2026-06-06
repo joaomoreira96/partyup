@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AdminGamesManager } from "@/features/admin/components/admin-games-manager";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import {
@@ -24,7 +25,9 @@ export default async function AdminGamesPage() {
         Gere o catálogo e as categorias dos jogos.
       </p>
       <div className="mt-6">
-        <AdminGamesManager initialCategories={categories} initialGames={games} />
+        <Suspense fallback={<p className="text-sm text-muted-foreground">A carregar…</p>}>
+          <AdminGamesManager initialCategories={categories} initialGames={games} />
+        </Suspense>
       </div>
     </div>
   );

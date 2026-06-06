@@ -8,6 +8,7 @@ import { getServerI18n } from "@/i18n/get-server-i18n";
 import { getGameName } from "@/lib/game-localized";
 import { getCurrentProfile, getSessionUser } from "@/services/auth.service";
 import { getGameBySlug } from "@/services/game.service";
+import { RoomCodeDisplay } from "@/features/rooms/components/room-code-display";
 import { Button } from "@/components/ui/button";
 
 const GamePlayer = dynamic(
@@ -78,7 +79,9 @@ export default async function PlayGamePage({ params, searchParams }: PageProps) 
           ) : (
             <span>{t("games.guestMode")}</span>
           )}
-          {room && <span className="ml-2 font-mono">{t("games.roomLabel", { code: room })}</span>}
+          {room ? (
+            <RoomCodeDisplay code={room} variant="inline" className="ml-2" />
+          ) : null}
         </div>
       </header>
 

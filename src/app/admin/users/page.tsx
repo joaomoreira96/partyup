@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { UserBanManager } from "@/features/admin/components/user-ban-manager";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { listUsersForAdmin } from "@/services/admin.service";
@@ -11,5 +12,9 @@ export const metadata = buildPageMetadata({
 export default async function AdminUsersPage() {
   const users = await listUsersForAdmin();
 
-  return <UserBanManager initialUsers={users} />;
+  return (
+    <Suspense fallback={<p className="text-sm text-muted-foreground">A carregar…</p>}>
+      <UserBanManager initialUsers={users} />
+    </Suspense>
+  );
 }

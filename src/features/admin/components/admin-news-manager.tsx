@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { getNewsContent, getNewsTitle } from "@/lib/news-localized";
@@ -19,6 +20,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PaginationControls } from "@/components/shared/pagination-controls";
+import { ADMIN_PAGE_SIZE, paginateSlice, parsePageParam } from "@/lib/pagination";
 
 type NewsForm = {
   title: string;
@@ -58,7 +61,14 @@ function formatNewsDate(iso: string) {
 }
 
 export function AdminNewsManager({ initialNews }: { initialNews: NewsPost[] }) {
+  const searchParams = useSearchParams();
   const [items, setItems] = useState(initialNews);
+  const newsPage = parsePageParam(searchParams.get("page"));
+  const newsPagination = useMemo(
+    () => paginateSlice(items, newsPage, ADMIN_PAGE_SIZE),
+    [items, newsPage]
+  );
+  const pagedItems = newsPagination.items;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<NewsForm>(emptyForm);
@@ -199,7 +209,7 @@ export function AdminNewsManager({ initialNews }: { initialNews: NewsPost[] }) {
             Ainda não há news. Cria a primeira.
           </li>
         ) : (
-          items.map((item) => (
+          pagedItems.map((item) => (
             <li
               key={item.id}
               className="flex flex-wrap items-start justify-between gap-3 rounded-lg border p-4"
@@ -253,6 +263,15 @@ export function AdminNewsManager({ initialNews }: { initialNews: NewsPost[] }) {
           ))
         )}
       </ul>
+
+      <PaginationControls
+        page={newsPagination.page}
+        totalPages={newsPagination.totalPages}
+        totalItems={newsPagination.totalItems}
+        rangeStart={newsPagination.rangeStart}
+        rangeEnd={newsPagination.rangeEnd}
+        className="mt-4"
+      />
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">

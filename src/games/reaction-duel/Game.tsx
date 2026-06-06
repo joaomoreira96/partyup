@@ -22,6 +22,7 @@ import {
   resolveResultsNeeded,
   withRoundPhase,
 } from "@/lib/rooms/round-completion";
+import { RoomCodeDisplay } from "@/features/rooms/components/room-code-display";
 
 type GameProps = {
   roomCode: string;
@@ -277,9 +278,9 @@ export function Game({ roomCode, sdk }: GameProps) {
   return (
     <div className="rounded-xl border border-border bg-card p-6 text-center">
       <p className="text-muted-foreground">{COPY.waiting}</p>
-      <p className="mt-2 text-sm">
-        Sala <span className="font-mono font-bold">{roomCode}</span>
-      </p>
+      <div className="mt-2 flex justify-center">
+        <RoomCodeDisplay code={roomCode} variant="inline" />
+      </div>
       {status === "waiting" && started && (
         <p className="mt-2 text-xs text-muted-foreground">
           A voltar ao lobby…

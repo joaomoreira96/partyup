@@ -1,11 +1,18 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MainShell } from "@/components/layout/main-shell";
+import { PaginationControls } from "@/components/shared/pagination-controls";
+import { DEFAULT_PAGE_SIZE, paginateSlice, parsePageParam } from "@/lib/pagination";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getServerI18n } from "@/i18n/get-server-i18n";
 import { getGameName } from "@/lib/game-localized";
 import { getPublishedGames } from "@/services/game.service";
 import { getMetricForGame } from "@/services/ranking.service";
+
+interface PageProps {
+  searchParams: Promise<{ page?: string }>;
+}
 
 export async function generateMetadata() {
   const { t } = await getServerI18n();
@@ -15,9 +22,13 @@ export async function generateMetadata() {
   });
 }
 
-export default async function RankingsPage() {
+export default async function RankingsPage({ searchParams }: PageProps) {
   const { t, locale } = await getServerI18n();
+  const params = await searchParams;
   const games = await getPublishedGames();
+  const rankingsPage = parsePageParam(params.page);
+  const rankingsPagination = paginateSlice(games, rankingsPage, DEFAULT_PAGE_SIZE);
+  const pagedGames = rankingsPagination.items;
 
   return (
     <MainShell>
@@ -25,7 +36,7 @@ export default async function RankingsPage() {
       <p className="mt-2 text-muted-foreground">{t("rankings.pageDescription")}</p>
 
       <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-        {games.map((game) => (
+        {pagedGames.map((game) => (
           <li key={game.id}>
             <Link
               href={`/rankings/${game.slug}`}
@@ -53,6 +64,16 @@ export default async function RankingsPage() {
           </li>
         ))}
       </ul>
+      <Suspense fallback={null}>
+        <PaginationControls
+          page={rankingsPagination.page}
+          totalPages={rankingsPagination.totalPages}
+          totalItems={rankingsPagination.totalItems}
+          rangeStart={rankingsPagination.rangeStart}
+          rangeEnd={rankingsPagination.rangeEnd}
+          className="mt-8"
+        />
+      </Suspense>
     </MainShell>
   );
 }

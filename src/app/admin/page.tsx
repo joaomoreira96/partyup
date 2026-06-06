@@ -10,6 +10,8 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminOverviewPage() {
   const [games, roomsCount, users] = await Promise.all([
     getPublishedGames(),

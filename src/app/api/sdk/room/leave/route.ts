@@ -30,6 +30,7 @@ export async function POST(request: Request) {
         .delete()
         .eq("room_id", room.id)
         .eq("user_id", user.id);
+      // cleanup_room_if_empty trigger apaga a sala quando o último jogador sai
     }
   }
 

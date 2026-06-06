@@ -1,12 +1,12 @@
 import { MainShell } from "@/components/layout/main-shell";
-import { CategoriesSection } from "@/features/home/components/categories-section";
 import { FeaturedGamesSection } from "@/features/home/components/featured-games";
 import { HeroSection } from "@/features/home/components/hero-section";
+import { RecentlyAddedGamesSection } from "@/features/home/components/recently-added-games";
 import { NewsSection } from "@/features/home/components/news-section";
 import { RankingsPreviewSection } from "@/features/home/components/rankings-preview";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getServerI18n } from "@/i18n/get-server-i18n";
-import { getCategories, getFeaturedGames } from "@/services/game.service";
+import { getFeaturedGames, getRecentlyAddedGames } from "@/services/game.service";
 import { getVisibleNews } from "@/services/news.service";
 import { getGlobalRankingsPreview } from "@/services/ranking.service";
 
@@ -20,9 +20,9 @@ export async function generateMetadata() {
 
 export default async function HomePage() {
   const { t, locale } = await getServerI18n();
-  const [featured, categories, rankings, news] = await Promise.all([
+  const [featured, recent, rankings, news] = await Promise.all([
     getFeaturedGames(),
-    getCategories(),
+    getRecentlyAddedGames(4),
     getGlobalRankingsPreview(),
     getVisibleNews(3),
   ]);
@@ -32,7 +32,7 @@ export default async function HomePage() {
       <HeroSection />
       <NewsSection news={news} title={t("home.newsTitle")} locale={locale} />
       <FeaturedGamesSection games={featured} />
-      <CategoriesSection categories={categories} />
+      <RecentlyAddedGamesSection games={recent} />
       <RankingsPreviewSection previews={rankings} />
     </MainShell>
   );

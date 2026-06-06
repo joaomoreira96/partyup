@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AdminNewsManager } from "@/features/admin/components/admin-news-manager";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { listNewsForAdmin } from "@/services/news.service";
@@ -11,5 +12,9 @@ export const metadata = buildPageMetadata({
 export default async function AdminNewsPage() {
   const news = await listNewsForAdmin();
 
-  return <AdminNewsManager initialNews={news} />;
+  return (
+    <Suspense fallback={<p className="text-sm text-muted-foreground">A carregar…</p>}>
+      <AdminNewsManager initialNews={news} />
+    </Suspense>
+  );
 }

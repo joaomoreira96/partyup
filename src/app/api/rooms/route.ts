@@ -412,7 +412,15 @@ export async function PATCH(request: Request) {
       });
     }
 
-    return NextResponse.json({ ok: true });
+    const { count: remaining } = await supabase
+      .from("room_players")
+      .select("*", { count: "exact", head: true })
+      .eq("room_id", room.id);
+
+    return NextResponse.json({
+      ok: true,
+      roomClosed: (remaining ?? 0) === 0,
+    });
   }
 
   return NextResponse.json({ error: "Ação inválida" }, { status: 400 });

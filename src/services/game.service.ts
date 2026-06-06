@@ -10,7 +10,6 @@ import {
 } from "@/lib/games/normalize-category-links";
 import { resolveGameCategories } from "@/lib/games/resolve-categories";
 import { resolveGameModuleId } from "@/lib/games/resolve-module-id";
-import { FEATURED_GAME_SLUGS } from "@/lib/constants";
 import { isPlayableGame, normalizeGameStatus } from "@/lib/db/mappers";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { createClient } from "@/lib/supabase/server";
@@ -223,10 +222,53 @@ export async function getGameBySlug(slug: string): Promise<GameRecord | null> {
 
 export async function getFeaturedGames(): Promise<GameRecord[]> {
   const all = await getPublishedGames();
-  const featured = FEATURED_GAME_SLUGS.map((slug) =>
-    all.find((g) => g.slug === slug)
-  ).filter((g): g is GameRecord => g != null);
-  return featured.length ? featured : all.filter((g) => g.featured).slice(0, 3) || all.slice(0, 3);
+  return all.filter((g) => g.featured);
+}
+
+export async function getRecentlyAddedGames(limit = 4): Promise<GameRecord[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const [allCategories, gamesResult] = await Promise.all([
+        fetchAllCategoriesFromDb(),
+        supabase
+          .from("games")
+          .select(
+            `*,
+            game_categories ( categories ( id, slug, name, name_en ) )`
+          )
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(limit),
+      ]);
+
+      const { data: games, error } = gamesResult;
+      if (!error && games?.length) {
+        return Promise.all(
+          games.map(async (row) => {
+            const links = normalizeGameCategoryLinks(row.game_categories);
+            const junctionCategories = extractCategoriesFromLinks(links);
+            const legacyCategory =
+              typeof row.category === "string" ? row.category : undefined;
+            const categories = resolveGameCategories(
+              junctionCategories,
+              legacyCategory,
+              allCategories
+            );
+            const { game_categories: _, category: __, ...rest } = row;
+            const mapped = mapGameRow(rest as Record<string, unknown>, categories);
+            mapped.active_build = await fetchActiveBuild(mapped.id);
+            return finalizeGameRecord(mapped);
+          })
+        );
+      }
+    } catch {
+      /* fallback */
+    }
+  }
+
+  const all = STATIC_GAMES.filter(isPlayableGame);
+  return all.slice(0, limit);
 }
 
 export async function getCategories(): Promise<Category[]> {

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { getGuestName } from "@/lib/guest";
-import { getRoomPlayerId, saveRoomPlayerId } from "@/lib/rooms/player-session";
+import { clearRoomPlayerId, getRoomPlayerId, saveRoomPlayerId } from "@/lib/rooms/player-session";
 
 type RoomAction =
   | "join"
@@ -74,7 +74,10 @@ export function useRoom(code: string) {
           return { ok: false as const, data };
         }
 
-        if (data.playerId) {
+        if (action === "leave") {
+          clearRoomPlayerId(code);
+          setPlayerId(null);
+        } else if (data.playerId) {
           saveRoomPlayerId(code, data.playerId);
           setPlayerId(data.playerId);
         }

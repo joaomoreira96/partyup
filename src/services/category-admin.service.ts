@@ -9,7 +9,7 @@ import { resolveGameCategories } from "@/lib/games/resolve-categories";
 import { slugifyLabel } from "@/lib/slugify";
 import { normalizeGameStatus } from "@/lib/db/mappers";
 import { isAdmin } from "@/services/auth.service";
-import type { AdminGameRow, Category, GameRecord } from "@/types/platform";
+import type { AdminGameRow, Category, GameRecord, GameStatus } from "@/types/platform";
 
 function mapRpcError(message: string): string {
   const lower = message.toLowerCase();
@@ -17,6 +17,7 @@ function mapRpcError(message: string): string {
   if (lower.includes("name_required")) return "name_required";
   if (lower.includes("slug_required")) return "slug_required";
   if (lower.includes("game_not_found") || lower.includes("p0002")) return "game_not_found";
+  if (lower.includes("invalid_status")) return "invalid_status";
   if (
     lower.includes("duplicate") ||
     lower.includes("23505") ||
@@ -272,4 +273,81 @@ export async function setGameCategories(
   }
 
   return persistGameCategories(supabase, gameId, uniqueIds);
+}
+
+export async function setGameFeatured(
+  gameId: string,
+  featured: boolean
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isSupabaseConfigured() || !(await isAdmin())) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_set_game_featured", {
+    p_game_id: gameId,
+    p_featured: featured,
+  });
+
+  if (!error && data) {
+    return { ok: true };
+  }
+
+  if (error) {
+    const mapped = mapRpcError(error.message);
+    if (mapped !== "rpc_not_found" && mapped !== "unknown") {
+      return { ok: false, error: mapped };
+    }
+  }
+
+  const { data: row, error: updateError } = await supabase
+    .from("games")
+    .update({ featured })
+    .eq("id", gameId)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) return { ok: false, error: updateError.message };
+  if (!row) return { ok: false, error: "game_not_found" };
+  return { ok: true };
+}
+
+export async function setGameStatus(
+  gameId: string,
+  status: Extract<GameStatus, "active" | "disabled">
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isSupabaseConfigured() || !(await isAdmin())) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_set_game_status", {
+    p_game_id: gameId,
+    p_status: status,
+  });
+
+  if (!error && data) {
+    return { ok: true };
+  }
+
+  if (error) {
+    const mapped = mapRpcError(error.message);
+    if (mapped !== "rpc_not_found" && mapped !== "unknown") {
+      return { ok: false, error: mapped };
+    }
+  }
+
+  const updates: { status: GameStatus; featured?: boolean } = { status };
+  if (status === "disabled") updates.featured = false;
+
+  const { data: row, error: updateError } = await supabase
+    .from("games")
+    .update(updates)
+    .eq("id", gameId)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) return { ok: false, error: updateError.message };
+  if (!row) return { ok: false, error: "game_not_found" };
+  return { ok: true };
 }

@@ -248,22 +248,38 @@ export function resolveOfflineRoomGame(slug?: string | null): GameRecord | undef
 
 
 
-export async function countActiveRooms(): Promise<number> {
+async function cleanupStaleRoomPresence(): Promise<void> {
+  const supabase = await createClient();
+  await supabase.rpc("cleanup_stale_room_presence", { p_max_idle_minutes: 10 });
+}
 
+function parseCountValue(data: unknown): number | null {
+  if (typeof data === "number" && Number.isFinite(data)) return data;
+  if (typeof data === "string" && data.trim() !== "") {
+    const parsed = Number(data);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+export async function countActiveRooms(): Promise<number> {
   if (!isSupabaseConfigured()) return 0;
 
   const supabase = await createClient();
 
-  const { count } = await supabase
+  await cleanupStaleRoomPresence();
 
+  const { data, error } = await supabase.rpc("count_occupied_rooms");
+  const parsed = !error ? parseCountValue(data) : null;
+  if (parsed !== null) return parsed;
+
+  const { data: rows, error: selectError } = await supabase
     .from("rooms")
+    .select("id, status, room_players!inner(id)")
+    .not("status", "eq", "finished");
 
-    .select("*", { count: "exact", head: true })
-
-    .in("status", ["waiting", "playing"]);
-
-  return count ?? 0;
-
+  if (selectError || !rows) return 0;
+  return new Set(rows.map((row) => row.id as string)).size;
 }
 
 

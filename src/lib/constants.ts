@@ -4,14 +4,6 @@ export const SITE_URL =
 export const SITE_DESCRIPTION =
   "Plataforma social de jogos no browser. Entra, joga, partilha e compete — sem instalar nada.";
 
-/** Slugs destacados na home — adicionar jogos sem alterar navegação */
-export const FEATURED_GAME_SLUGS = [
-  "snake",
-  "memoria-classica",
-  "reacao-rapida",
-  "trivia-rapida",
-] as const;
-
 export const NAV_LINKS = [
   { href: "/games", key: "nav.games" },
   { href: "/rankings", key: "nav.rankings" },
