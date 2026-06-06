@@ -10,6 +10,7 @@ import { useRoom } from "@/hooks/use-room";
 import { getGuestName, setGuestName } from "@/lib/guest";
 import { getRoomPlayerId } from "@/lib/rooms/player-session";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getGameName } from "@/lib/game-localized";
 import type { GameRecord, Profile } from "@/types/platform";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,7 @@ export function RoomLobby({
   offline?: boolean;
   profile?: Pick<Profile, "display_name" | "username"> | null;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const isRegistered = !!profile;
   const [hydrated, setHydrated] = useState(false);
   const [guestName, setGuestNameState] = useState("");
@@ -206,7 +207,7 @@ export function RoomLobby({
         >
           {code}
         </p>
-        <p className="mt-2 text-sm font-medium">{game.name}</p>
+        <p className="mt-2 text-sm font-medium">{getGameName(game, locale)}</p>
         {offline && (
           <p className="mt-3 text-xs text-warning" role="status">
             {t("room.offlineHint")}
@@ -302,7 +303,7 @@ export function RoomLobby({
           <div className="party-card p-4">
             <h2 className="flex items-center gap-2 font-semibold">
               <Users className="size-4 text-secondary" aria-hidden />
-              {t("room.lobbyTitle", { game: game.name })}
+              {t("room.lobbyTitle", { game: getGameName(game, locale) })}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {playerCountLabel}

@@ -7,6 +7,8 @@ import { Heart, Star, Users } from "lucide-react";
 import { CompatibilityBadges } from "@/features/games/components/compatibility-badges";
 import { FavoriteGameToggle } from "@/features/games/components/favorite-game-toggle";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getCategoryName } from "@/lib/category-localized";
+import { getGameName } from "@/lib/game-localized";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,7 +23,7 @@ export function GameCard({
   initialIsFavorite?: boolean;
   showFavoriteToggle?: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
 
   return (
@@ -69,7 +71,7 @@ export function GameCard({
             {t("games.favorite.badge")}
           </Badge>
         ) : null}
-        <span className="sr-only">{game.name}</span>
+        <span className="sr-only">{getGameName(game, locale)}</span>
       </Link>
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex flex-wrap gap-1.5">
@@ -79,7 +81,7 @@ export function GameCard({
               variant="secondary"
               className="bg-surface-hover text-xs"
             >
-              {cat.name}
+              {getCategoryName(cat, locale)}
             </Badge>
           ))}
         </div>
@@ -88,7 +90,7 @@ export function GameCard({
             href={`/games/${game.slug}`}
             className="hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
           >
-            {game.name}
+            {getGameName(game, locale)}
           </Link>
         </h3>
         <p className="line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">

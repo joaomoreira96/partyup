@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import type { Locale } from "@/i18n/config";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/constants";
+import { getGameName, type LocalizedGameName } from "@/lib/game-localized";
 
 type PageMetaInput = {
   title: string;
@@ -42,15 +44,17 @@ export function buildPageMetadata({
   };
 }
 
-export function buildGameMetadata(game: {
-  name: string;
-  description: string;
-  slug: string;
-  banner_url?: string | null;
-  thumbnail_url?: string | null;
-}): Metadata {
+export function buildGameMetadata(
+  game: LocalizedGameName & {
+    description: string;
+    slug: string;
+    banner_url?: string | null;
+    thumbnail_url?: string | null;
+  },
+  locale: Locale = "pt"
+): Metadata {
   return buildPageMetadata({
-    title: game.name,
+    title: getGameName(game, locale),
     description: game.description,
     path: `/games/${game.slug}`,
     image: game.banner_url ?? game.thumbnail_url ?? "/games/placeholder-banner.svg",

@@ -28,7 +28,9 @@ export async function PATCH(request: Request) {
             ? "Jogo não encontrado."
             : result.error === "forbidden"
               ? "Acesso negado."
-              : "Não foi possível atualizar as categorias do jogo.",
+              : result.error === "save_verification_failed"
+                ? "As categorias não foram gravadas na base de dados. Confirma as permissões de admin."
+                : "Não foi possível atualizar as categorias do jogo.",
         detail: process.env.NODE_ENV === "development" ? result.error : undefined,
       },
       { status: 400 }

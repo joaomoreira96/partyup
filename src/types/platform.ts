@@ -52,6 +52,7 @@ export type TopGameStat = {
   gameId: string;
   slug: string;
   name: string;
+  name_en?: string;
   moduleId: string;
   thumbnailUrl: string | null;
   sessions: number;
@@ -63,6 +64,7 @@ export type TopGameStat = {
 export type PersonalRecord = {
   gameId: string;
   gameName: string;
+  gameNameEn?: string;
   slug: string;
   label: string;
   score: number;
@@ -72,6 +74,7 @@ export type PersonalRecord = {
 export type ActiveRanking = {
   gameId: string;
   gameName: string;
+  gameNameEn?: string;
   slug: string;
   rank: number;
   metric: LeaderboardMetric;
@@ -99,7 +102,10 @@ export type PublicPlayerProfile = {
 export interface Category {
   id: string;
   slug: string;
+  /** Nome em português */
   name: string;
+  /** Nome em inglês */
+  name_en: string;
 }
 
 export interface NewsPost {
@@ -123,7 +129,10 @@ export type AdminGameRow = GameRecord & {
 export interface GameRecord {
   id: string;
   slug: string;
+  /** Nome em português */
   name: string;
+  /** Nome em inglês */
+  name_en?: string;
   description: string;
   thumbnail_url: string | null;
   banner_url: string | null;

@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useI18n } from "@/features/i18n/locale-provider";
+import { getCategoryName } from "@/lib/category-localized";
+import { getGameName } from "@/lib/game-localized";
 import type { AdminGameRow, Category } from "@/types/platform";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,9 +22,19 @@ export function AdminGamesManager({
   initialCategories,
   initialGames,
 }: AdminGamesManagerProps) {
+  const router = useRouter();
+  const { locale } = useI18n();
   const [categories, setCategories] = useState(initialCategories);
+  const sortedCategories = useMemo(
+    () =>
+      [...categories].sort((a, b) =>
+        getCategoryName(a, locale).localeCompare(getCategoryName(b, locale))
+      ),
+    [categories, locale]
+  );
   const [games, setGames] = useState(initialGames);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryNameEn, setNewCategoryNameEn] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [savingGameId, setSavingGameId] = useState<string | null>(null);
   const [draftCategories, setDraftCategories] = useState<Record<string, string[]>>(() =>
@@ -30,6 +44,7 @@ export function AdminGamesManager({
   async function createCategory(e: React.FormEvent) {
     e.preventDefault();
     const name = newCategoryName.trim();
+    const nameEn = newCategoryNameEn.trim();
     if (!name) return;
 
     setCreatingCategory(true);
@@ -37,7 +52,7 @@ export function AdminGamesManager({
       const res = await fetch("/api/admin/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, name_en: nameEn || name }),
       });
       const data = (await res.json()) as {
         message?: string;
@@ -55,6 +70,7 @@ export function AdminGamesManager({
         );
       }
       setNewCategoryName("");
+      setNewCategoryNameEn("");
       toast.success("Categoria criada.");
     } catch {
       toast.error("Erro de ligação.");
@@ -132,6 +148,7 @@ export function AdminGamesManager({
         )
       );
       toast.success("Categorias do jogo atualizadas.");
+      router.refresh();
     } catch {
       toast.error("Erro de ligação.");
     } finally {
@@ -148,15 +165,27 @@ export function AdminGamesManager({
         </p>
 
         <form onSubmit={(e) => void createCategory(e)} className="mt-4 flex flex-wrap gap-2">
-          <div className="min-w-[200px] flex-1">
+          <div className="min-w-[160px] flex-1">
             <Label htmlFor="new-category" className="sr-only">
-              Nova categoria
+              Nome em português
             </Label>
             <Input
               id="new-category"
-              placeholder="Nome da categoria"
+              placeholder="Nome (PT)"
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
+              maxLength={80}
+            />
+          </div>
+          <div className="min-w-[160px] flex-1">
+            <Label htmlFor="new-category-en" className="sr-only">
+              Nome em inglês
+            </Label>
+            <Input
+              id="new-category-en"
+              placeholder="Nome (EN)"
+              value={newCategoryNameEn}
+              onChange={(e) => setNewCategoryNameEn(e.target.value)}
               maxLength={80}
             />
           </div>
@@ -166,23 +195,23 @@ export function AdminGamesManager({
           </Button>
         </form>
 
-        {categories.length === 0 ? (
+        {sortedCategories.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">Ainda não há categorias.</p>
         ) : (
           <ul className="mt-4 flex flex-wrap gap-2">
-            {categories.map((cat) => (
+            {sortedCategories.map((cat) => (
               <li
                 key={cat.id}
                 className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
               >
-                <span>{cat.name}</span>
+                <span>{getCategoryName(cat, locale)}</span>
                 <span className="text-xs text-muted-foreground">/{cat.slug}</span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   className="size-7"
-                  aria-label={`Apagar ${cat.name}`}
+                  aria-label={`Apagar ${getCategoryName(cat, locale)}`}
                   onClick={() => void deleteCategory(cat.id)}
                 >
                   <Trash2 className="size-3.5 text-destructive" />
@@ -215,19 +244,19 @@ export function AdminGamesManager({
                 <li key={game.id} className="rounded-lg border p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="font-medium">{game.name}</p>
+                      <p className="font-medium">{getGameName(game, locale)}</p>
                       <p className="text-xs text-muted-foreground">{game.slug}</p>
                     </div>
                     <Badge variant="outline">{game.status}</Badge>
                   </div>
 
-                  {categories.length === 0 ? (
+                  {sortedCategories.length === 0 ? (
                     <p className="mt-3 text-sm text-muted-foreground">
                       Cria categorias primeiro.
                     </p>
                   ) : (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {categories.map((cat) => {
+                      {sortedCategories.map((cat) => {
                         const checked = selected.includes(cat.id);
                         return (
                           <label
@@ -242,7 +271,7 @@ export function AdminGamesManager({
                               checked={checked}
                               onChange={() => toggleGameCategory(game.id, cat.id)}
                             />
-                            {cat.name}
+                            {getCategoryName(cat, locale)}
                           </label>
                         );
                       })}
@@ -253,7 +282,7 @@ export function AdminGamesManager({
                     className="mt-3"
                     size="sm"
                     variant={dirty ? "default" : "outline"}
-                    disabled={!dirty || savingGameId === game.id || categories.length === 0}
+                    disabled={!dirty || savingGameId === game.id || sortedCategories.length === 0}
                     onClick={() => void saveGameCategories(game.id)}
                   >
                     {savingGameId === game.id ? (

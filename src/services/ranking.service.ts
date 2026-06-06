@@ -52,7 +52,7 @@ export async function getGameLeaderboard(
 }
 
 export type RankingPreview = {
-  game: Pick<GameRecord, "slug" | "name" | "thumbnail_url" | "module_id">;
+  game: Pick<GameRecord, "slug" | "name" | "name_en" | "thumbnail_url" | "module_id">;
   topEntry: LeaderboardEntry | null;
   metric: LeaderboardMetric;
 };
@@ -70,6 +70,7 @@ export async function getGlobalRankingsPreview(
       game: {
         slug: game.slug,
         name: game.name,
+        name_en: game.name_en,
         thumbnail_url: game.thumbnail_url,
         module_id: game.module_id,
       },

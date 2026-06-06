@@ -18,12 +18,14 @@ export async function GET() {
 
 const createSchema = z.object({
   name: z.string().min(1).max(80),
+  name_en: z.string().max(80).optional(),
   slug: z.string().min(1).max(48).optional(),
 });
 
 const updateSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(80).optional(),
+  name_en: z.string().max(80).optional(),
   slug: z.string().min(1).max(48).optional(),
 });
 

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getGameName } from "@/lib/game-localized";
 import {
   formatPlayTimeHours,
   formatRecordScore,
@@ -43,12 +44,12 @@ export function PublicTopGames({ games }: { games: TopGameStat[] }) {
                   />
                 ) : (
                   <span className="flex size-full items-center justify-center text-lg font-bold text-muted-foreground">
-                    {game.name[0]}
+                    {getGameName(game, locale)[0]}
                   </span>
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold">{game.name}</p>
+                <p className="font-semibold">{getGameName(game, locale)}</p>
                 <dl className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
                   <div>
                     <dt>{t("publicProfile.sessions")}</dt>

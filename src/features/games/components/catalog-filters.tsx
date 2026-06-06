@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getCategoryName } from "@/lib/category-localized";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Category } from "@/types/platform";
@@ -13,7 +14,7 @@ const selectClass =
 export function CatalogFilters({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const params = useSearchParams();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   function update(key: string, value: string) {
     const next = new URLSearchParams(params.toString());
@@ -56,7 +57,7 @@ export function CatalogFilters({ categories }: { categories: Category[] }) {
           <option value="all">{t("games.filters.allCategories")}</option>
           {categories.map((c) => (
             <option key={c.slug} value={c.slug}>
-              {c.name}
+              {getCategoryName(c, locale)}
             </option>
           ))}
         </select>

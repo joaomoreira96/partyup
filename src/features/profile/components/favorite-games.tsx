@@ -6,11 +6,12 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { FavoriteGameToggle } from "@/features/games/components/favorite-game-toggle";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getGameName } from "@/lib/game-localized";
 import { Button } from "@/components/ui/button";
 import type { GameRecord } from "@/types/platform";
 
 export function FavoriteGamesSection({ games }: { games: GameRecord[] }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [items, setItems] = useState(games);
 
   function handleRemove(gameId: string) {
@@ -63,7 +64,9 @@ export function FavoriteGamesSection({ games }: { games: GameRecord[] }) {
                       loading="lazy"
                     />
                   </div>
-                  <p className="truncate p-3 text-sm font-medium">{game.name}</p>
+                  <p className="truncate p-3 text-sm font-medium">
+                    {getGameName(game, locale)}
+                  </p>
                 </Link>
               </article>
             </li>

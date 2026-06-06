@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getGameName } from "@/lib/game-localized";
 import type { ActiveRanking } from "@/types/platform";
 
 export function PublicRankings({ rankings }: { rankings: ActiveRanking[] }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   if (rankings.length === 0) return null;
 
@@ -21,7 +22,9 @@ export function PublicRankings({ rankings }: { rankings: ActiveRanking[] }) {
               href={`/rankings/${r.slug}`}
               className="party-card inline-flex items-center gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-surface-hover"
             >
-              <span className="font-medium">{r.gameName}</span>
+              <span className="font-medium">
+                {getGameName({ name: r.gameName, name_en: r.gameNameEn }, locale)}
+              </span>
               <span className="rounded-full bg-primary/15 px-2 py-0.5 font-bold text-primary tabular-nums">
                 #{r.rank}
               </span>

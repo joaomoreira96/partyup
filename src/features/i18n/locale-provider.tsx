@@ -61,10 +61,19 @@ export function LocaleProvider({
   );
 }
 
+const fallbackI18n = (() => {
+  const locale = DEFAULT_LOCALE;
+  const dict = getDictionary(locale);
+  return {
+    locale,
+    dict,
+    setLocale: () => {},
+    t: (key: string, params?: Record<string, string | number>) =>
+      translate(dict, key, params),
+  };
+})();
+
 export function useI18n() {
   const ctx = useContext(LocaleContext);
-  if (!ctx) {
-    throw new Error("useI18n must be used within LocaleProvider");
-  }
-  return ctx;
+  return ctx ?? fallbackI18n;
 }

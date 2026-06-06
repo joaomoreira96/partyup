@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import {
+  extractCategoriesFromLinks,
+  extractCategoryIdsFromLinks,
+  normalizeGameCategoryLinks,
+} from "@/lib/games/normalize-category-links";
+import { resolveGameCategories } from "@/lib/games/resolve-categories";
 import { slugifyLabel } from "@/lib/slugify";
 import { normalizeGameStatus } from "@/lib/db/mappers";
 import { isAdmin } from "@/services/auth.service";
@@ -49,7 +55,7 @@ export async function listCategoriesForAdmin(): Promise<Category[]> {
 
   const { data: rows, error: selectError } = await supabase
     .from("categories")
-    .select("id, slug, name")
+    .select("id, slug, name, name_en")
     .order("name");
   if (selectError) return [];
   return (rows ?? []) as Category[];
@@ -57,6 +63,7 @@ export async function listCategoriesForAdmin(): Promise<Category[]> {
 
 export async function createCategory(input: {
   name: string;
+  name_en?: string;
   slug?: string;
 }): Promise<{ ok: true; category: Category } | { ok: false; error: string }> {
   if (!isSupabaseConfigured() || !(await isAdmin())) {
@@ -66,11 +73,13 @@ export async function createCategory(input: {
   const name = input.name.trim();
   if (!name) return { ok: false, error: "name_required" };
 
+  const nameEn = input.name_en?.trim() || name;
   const slug = slugifyLabel(input.slug?.trim() || name);
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("admin_create_category", {
     p_name: name,
     p_slug: slug,
+    p_name_en: nameEn,
   });
 
   if (error) {
@@ -79,7 +88,7 @@ export async function createCategory(input: {
 
   const categoryId = parseCategoryId(data);
   if (categoryId) {
-    return { ok: true, category: { id: categoryId, slug, name } };
+    return { ok: true, category: { id: categoryId, slug, name, name_en: nameEn } };
   }
 
   return {
@@ -90,7 +99,7 @@ export async function createCategory(input: {
 
 export async function updateCategory(
   id: string,
-  input: { name?: string; slug?: string }
+  input: { name?: string; name_en?: string; slug?: string }
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!isSupabaseConfigured() || !(await isAdmin())) {
     return { ok: false, error: "forbidden" };
@@ -108,6 +117,7 @@ export async function updateCategory(
     p_id: id,
     p_name: input.name?.trim() ?? null,
     p_slug: input.slug !== undefined ? slugifyLabel(input.slug) : null,
+    p_name_en: input.name_en !== undefined ? input.name_en.trim() : null,
   });
 
   if (error) {
@@ -146,21 +156,33 @@ export async function listGamesForAdmin(): Promise<AdminGameRow[]> {
     .from("games")
     .select(
       `*,
-      game_categories ( category_id, categories ( id, slug, name ) )`
+      game_categories ( category_id, categories ( id, slug, name, name_en ) )`
     )
     .order("name");
 
   if (error || !data) return [];
 
+  const { data: allCategories } = await supabase
+    .from("categories")
+    .select("id, slug, name, name_en")
+    .order("name");
+  const categoryCatalog = (allCategories ?? []) as Category[];
+
   return data.map((row) => {
-    const links = row.game_categories as
-      | { category_id: string; categories: Category | null }[]
-      | null;
-    const categories =
-      links?.map((l) => l.categories).filter((c): c is Category => c != null) ??
-      [];
-    const category_ids = links?.map((l) => l.category_id) ?? [];
-    const { game_categories: _, ...rest } = row;
+    const links = normalizeGameCategoryLinks(row.game_categories);
+    const junctionCategories = extractCategoriesFromLinks(links);
+    const legacyCategory =
+      typeof row.category === "string" ? row.category : undefined;
+    const categories = resolveGameCategories(
+      junctionCategories,
+      legacyCategory,
+      categoryCatalog
+    );
+    const category_ids =
+      links.length > 0
+        ? extractCategoryIdsFromLinks(links)
+        : categories.map((c) => c.id);
+    const { game_categories: _, category: __, ...rest } = row;
     const game = rest as GameRecord;
     return {
       ...game,
@@ -169,6 +191,56 @@ export async function listGamesForAdmin(): Promise<AdminGameRow[]> {
       category_ids,
     };
   });
+}
+
+async function verifyGameCategories(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  gameId: string,
+  expectedIds: string[]
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data: saved, error: verifyError } = await supabase
+    .from("game_categories")
+    .select("category_id")
+    .eq("game_id", gameId);
+  if (verifyError) {
+    return { ok: false, error: verifyError.message };
+  }
+
+  const savedIds = [...new Set((saved ?? []).map((row) => row.category_id))].sort();
+  const wantedIds = [...expectedIds].sort();
+  if (JSON.stringify(savedIds) !== JSON.stringify(wantedIds)) {
+    return { ok: false, error: "save_verification_failed" };
+  }
+
+  return { ok: true };
+}
+
+async function persistGameCategories(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  gameId: string,
+  categoryIds: string[]
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const uniqueIds = [...new Set(categoryIds)];
+
+  const { error: deleteError } = await supabase
+    .from("game_categories")
+    .delete()
+    .eq("game_id", gameId);
+  if (deleteError) {
+    return { ok: false, error: deleteError.message };
+  }
+
+  if (uniqueIds.length > 0) {
+    const { error: insertError } = await supabase.from("game_categories").insert(
+      uniqueIds.map((category_id) => ({ game_id: gameId, category_id }))
+    );
+    if (insertError) {
+      return { ok: false, error: insertError.message };
+    }
+  }
+
+  await supabase.from("games").update({ category: null }).eq("id", gameId);
+  return verifyGameCategories(supabase, gameId, uniqueIds);
 }
 
 export async function setGameCategories(
@@ -181,15 +253,23 @@ export async function setGameCategories(
 
   const supabase = await createClient();
   const uniqueIds = [...new Set(categoryIds)];
+
   const { data, error } = await supabase.rpc("admin_set_game_categories", {
     p_game_id: gameId,
     p_category_ids: uniqueIds,
   });
 
+  if (!error && data) {
+    const verified = await verifyGameCategories(supabase, gameId, uniqueIds);
+    if (verified.ok) return verified;
+  }
+
   if (error) {
     const mapped = mapRpcError(error.message);
-    return { ok: false, error: mapped === "unknown" ? error.message : mapped };
+    if (mapped !== "rpc_not_found" && mapped !== "rpc_failed" && mapped !== "unknown") {
+      return { ok: false, error: mapped };
+    }
   }
-  if (!data) return { ok: false, error: "game_not_found" };
-  return { ok: true };
+
+  return persistGameCategories(supabase, gameId, uniqueIds);
 }

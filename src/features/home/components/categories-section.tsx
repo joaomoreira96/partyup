@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { SectionHeading } from "@/components/design/section-heading";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getCategoryName } from "@/lib/category-localized";
 import type { Category } from "@/types/platform";
 
 export function CategoriesSection({ categories }: { categories: Category[] }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   return (
     <section className="party-section" aria-labelledby="categories-heading">
@@ -18,7 +19,7 @@ export function CategoriesSection({ categories }: { categories: Category[] }) {
               href={`/games?category=${cat.slug}`}
               className="inline-flex rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2.5 text-sm font-medium transition-colors duration-200 hover:border-primary/40 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
             >
-              {cat.name}
+              {getCategoryName(cat, locale)}
             </Link>
           </li>
         ))}

@@ -4,6 +4,7 @@ import { MainShell } from "@/components/layout/main-shell";
 import { LeaderboardList } from "@/features/rankings/components/leaderboard-list";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getServerI18n } from "@/i18n/get-server-i18n";
+import { getGameName } from "@/lib/game-localized";
 import { getGameBySlug } from "@/services/game.service";
 import {
   getGameLeaderboard,
@@ -17,18 +18,18 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
-  const { t } = await getServerI18n();
+  const { t, locale } = await getServerI18n();
   const game = await getGameBySlug(slug);
   if (!game) return { title: t("rankings.metadataTitle") };
   return buildPageMetadata({
-    title: t("rankings.pageTitle", { name: game.name }),
+    title: t("rankings.pageTitle", { name: getGameName(game, locale) }),
     path: `/rankings/${slug}`,
   });
 }
 
 export default async function GameRankingPage({ params }: PageProps) {
   const { slug } = await params;
-  const { t } = await getServerI18n();
+  const { t, locale } = await getServerI18n();
   const game = await getGameBySlug(slug);
   if (!game) notFound();
 
@@ -37,7 +38,9 @@ export default async function GameRankingPage({ params }: PageProps) {
 
   return (
     <MainShell className="max-w-2xl">
-      <h1 className="text-2xl font-bold">{t("rankings.pageTitle", { name: game.name })}</h1>
+      <h1 className="text-2xl font-bold">
+        {t("rankings.pageTitle", { name: getGameName(game, locale) })}
+      </h1>
       <p className="mt-2 text-sm text-muted-foreground">{t("rankings.officialHint")}</p>
 
       <div className="mt-8">

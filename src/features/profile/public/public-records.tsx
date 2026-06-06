@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getGameName } from "@/lib/game-localized";
 import { formatRecordScore } from "@/lib/profile/public-display";
 import type { PersonalRecord } from "@/types/platform";
 
 export function PublicRecords({ records }: { records: PersonalRecord[] }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   if (records.length === 0) return null;
 
@@ -26,7 +27,12 @@ export function PublicRecords({ records }: { records: PersonalRecord[] }) {
               <Trophy className="size-5" />
             </span>
             <div className="min-w-0">
-              <p className="text-sm text-muted-foreground">{record.gameName}</p>
+              <p className="text-sm text-muted-foreground">
+                {getGameName(
+                  { name: record.gameName, name_en: record.gameNameEn },
+                  locale
+                )}
+              </p>
               <p className="text-lg font-bold tabular-nums">
                 {formatRecordScore(record.score, record.metric)}
               </p>

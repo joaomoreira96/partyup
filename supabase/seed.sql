@@ -1,11 +1,13 @@
-insert into public.categories (slug, name) values
-  ('puzzle', 'Puzzle'),
-  ('arcade', 'Arcade'),
-  ('memory', 'Memória'),
-  ('trivia', 'Trivia'),
-  ('party', 'Party'),
-  ('strategy', 'Strategy')
-on conflict (slug) do nothing;
+insert into public.categories (slug, name, name_en) values
+  ('puzzle', 'Puzzle', 'Puzzle'),
+  ('arcade', 'Arcade', 'Arcade'),
+  ('memory', 'Memória', 'Memory'),
+  ('trivia', 'Trivia', 'Trivia'),
+  ('party', 'Party', 'Party'),
+  ('strategy', 'Estratégia', 'Strategy')
+on conflict (slug) do update set
+  name = excluded.name,
+  name_en = excluded.name_en;
 
 insert into public.games (
   slug, name, description, thumbnail_url, banner_url, module_id,
@@ -59,6 +61,15 @@ insert into public.games (
 on conflict (slug) do update set
   status = excluded.status,
   featured = excluded.featured;
+
+update public.games
+set name_en = case slug
+  when 'memoria-classica' then 'Classic Memory'
+  when 'reacao-rapida' then 'Quick Reaction'
+  when 'trivia-rapida' then 'Quick Trivia'
+  else name
+end
+where name_en is null or name_en = '';
 
 insert into public.game_categories (game_id, category_id)
 select g.id, c.id

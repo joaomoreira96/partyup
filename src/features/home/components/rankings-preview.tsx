@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { SectionHeading } from "@/components/design/section-heading";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getGameName } from "@/lib/game-localized";
 import { formatScoreForMetric } from "@/lib/games/types";
 import type { RankingPreview } from "@/services/ranking.service";
 
@@ -13,7 +14,7 @@ export function RankingsPreviewSection({
 }: {
   previews: RankingPreview[];
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   return (
     <section className="party-section" aria-labelledby="rankings-preview-heading">
@@ -44,7 +45,7 @@ export function RankingsPreviewSection({
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold truncate">{game.name}</p>
+                  <p className="font-semibold truncate">{getGameName(game, locale)}</p>
                   {topEntry ? (
                     <p className="text-sm text-muted-foreground">
                       {t("home.rankingsLeader", {

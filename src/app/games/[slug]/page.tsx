@@ -9,6 +9,8 @@ import { CreateRoomButton } from "@/features/rooms/components/create-room-button
 import { JoinRoomForm } from "@/features/rooms/components/join-room-form";
 import { buildGameMetadata } from "@/lib/seo/metadata";
 import { getServerI18n } from "@/i18n/get-server-i18n";
+import { getCategoryName } from "@/lib/category-localized";
+import { getGameName } from "@/lib/game-localized";
 import { getSessionUser } from "@/services/auth.service";
 import { isGameFavorite } from "@/services/favorites.service";
 import { FavoriteGameToggle } from "@/features/games/components/favorite-game-toggle";
@@ -25,12 +27,13 @@ export async function generateMetadata({ params }: PageProps) {
   const { t } = await getServerI18n();
   const game = await getGameBySlug(slug);
   if (!game) return { title: t("games.metadataGame") };
-  return buildGameMetadata(game);
+  const { locale } = await getServerI18n();
+  return buildGameMetadata(game, locale);
 }
 
 export default async function GameDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const { t } = await getServerI18n();
+  const { t, locale } = await getServerI18n();
   const game = await getGameBySlug(slug);
   if (!game) notFound();
 
@@ -53,7 +56,7 @@ export default async function GameDetailPage({ params }: PageProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
         <div className="absolute bottom-0 left-0 p-6">
-          <h1 className="text-2xl font-bold sm:text-4xl">{game.name}</h1>
+          <h1 className="text-2xl font-bold sm:text-4xl">{getGameName(game, locale)}</h1>
         </div>
       </div>
 
@@ -63,7 +66,7 @@ export default async function GameDetailPage({ params }: PageProps) {
           <div className="flex flex-wrap gap-2">
             {game.categories?.map((cat) => (
               <Badge key={cat.slug} variant="secondary">
-                {cat.name}
+                {getCategoryName(cat, locale)}
               </Badge>
             ))}
           </div>

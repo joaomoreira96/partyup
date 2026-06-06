@@ -10,6 +10,7 @@ import { getGuestId, getGuestName } from "@/lib/guest";
 import { getMaxScoreForModule, getMetricForGame } from "@/lib/games/metrics";
 import type { GameRecord } from "@/types/platform";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getGameName } from "@/lib/game-localized";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +31,7 @@ export function GamePlayer({
   isGuest,
   roomCode,
 }: GamePlayerProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
   const [guestName, setGuestNameState] = useState(() => t("common.guest"));
   const [error, setError] = useState<string | null>(null);
@@ -205,7 +206,7 @@ export function GamePlayer({
         <div
           ref={containerRef}
           className="w-full min-h-[280px] rounded-[var(--radius-premium)] border border-border bg-card p-4"
-          aria-label={t("games.play.areaLabel", { name: game.name })}
+          aria-label={t("games.play.areaLabel", { name: getGameName(game, locale) })}
           aria-busy={loading}
         />
       </div>

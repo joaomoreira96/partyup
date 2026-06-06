@@ -4,6 +4,11 @@ import {
   filterGames,
   getStaticGameBySlug,
 } from "@/lib/games/catalog";
+import {
+  extractCategoriesFromLinks,
+  normalizeGameCategoryLinks,
+} from "@/lib/games/normalize-category-links";
+import { resolveGameCategories } from "@/lib/games/resolve-categories";
 import { resolveGameModuleId } from "@/lib/games/resolve-module-id";
 import { FEATURED_GAME_SLUGS } from "@/lib/constants";
 import { isPlayableGame, normalizeGameStatus } from "@/lib/db/mappers";
@@ -36,6 +41,7 @@ function mapGameRow(row: Record<string, unknown>, categories: Category[]): GameR
   return {
     ...game,
     status: normalizeGameStatus(String(game.status)),
+    name_en: game.name_en ?? game.name,
     categories,
     supports_multiplayer: supportsMultiplayer,
     guest_allowed: game.guest_allowed ?? true,
@@ -62,28 +68,41 @@ async function fetchActiveBuild(gameId: string): Promise<GameBuild | null> {
   return (data as GameBuild) ?? null;
 }
 
+async function fetchAllCategoriesFromDb(): Promise<Category[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("categories").select("*").order("name");
+  return (data as Category[]) ?? [];
+}
+
 async function fetchGamesFromDb(): Promise<GameRecord[]> {
   const supabase = await createClient();
-  const { data: games, error } = await supabase
-    .from("games")
-    .select(
-      `*,
-      game_categories ( categories ( id, slug, name ) )`
-    )
-    .eq("status", "active")
-    .order("name");
+  const [allCategories, gamesResult] = await Promise.all([
+    fetchAllCategoriesFromDb(),
+    supabase
+      .from("games")
+      .select(
+        `*,
+        game_categories ( categories ( id, slug, name, name_en ) )`
+      )
+      .eq("status", "active")
+      .order("name"),
+  ]);
 
+  const { data: games, error } = gamesResult;
   if (error || !games?.length) return [];
 
   return Promise.all(
     games.map(async (row) => {
-      const categories =
-        (
-          row.game_categories as { categories: Category | null }[] | null
-        )
-          ?.map((gc) => gc.categories)
-          .filter((c): c is Category => c != null) ?? [];
-      const { game_categories: _, ...rest } = row;
+      const links = normalizeGameCategoryLinks(row.game_categories);
+      const junctionCategories = extractCategoriesFromLinks(links);
+      const legacyCategory =
+        typeof row.category === "string" ? row.category : undefined;
+      const categories = resolveGameCategories(
+        junctionCategories,
+        legacyCategory,
+        allCategories
+      );
+      const { game_categories: _, category: __, ...rest } = row;
       const mapped = mapGameRow(rest as Record<string, unknown>, categories);
       mapped.active_build = await fetchActiveBuild(mapped.id);
       return finalizeGameRecord(mapped);
@@ -93,24 +112,33 @@ async function fetchGamesFromDb(): Promise<GameRecord[]> {
 
 async function fetchGameBySlugFromDb(slug: string): Promise<GameRecord | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("games")
-    .select(
-      `*,
-      game_categories ( categories ( id, slug, name ) )`
-    )
-    .eq("slug", slug)
-    .eq("status", "active")
-    .maybeSingle();
+  const [allCategories, gameResult] = await Promise.all([
+    fetchAllCategoriesFromDb(),
+    supabase
+      .from("games")
+      .select(
+        `*,
+        game_categories ( categories ( id, slug, name, name_en ) )`
+      )
+      .eq("slug", slug)
+      .eq("status", "active")
+      .maybeSingle(),
+  ]);
 
+  const { data, error } = gameResult;
   if (error || !data) return null;
 
-  const categories =
-    (data.game_categories as { categories: Category | null }[] | null)
-      ?.map((gc) => gc.categories)
-      .filter((c): c is Category => c != null) ?? [];
+  const links = normalizeGameCategoryLinks(data.game_categories);
+  const junctionCategories = extractCategoriesFromLinks(links);
+  const legacyCategory =
+    typeof data.category === "string" ? data.category : undefined;
+  const categories = resolveGameCategories(
+    junctionCategories,
+    legacyCategory,
+    allCategories
+  );
 
-  const { game_categories: _, ...rest } = data;
+  const { game_categories: _, category: __, ...rest } = data;
   const mapped = mapGameRow(rest as Record<string, unknown>, categories);
   mapped.active_build = await fetchActiveBuild(mapped.id);
   return finalizeGameRecord(mapped);

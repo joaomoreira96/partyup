@@ -22,8 +22,20 @@ type SessionRow = {
   duration_seconds: number | null;
   score: number | null;
   games:
-    | { slug: string; name: string; module_id: string; thumbnail_url: string | null }
-    | { slug: string; name: string; module_id: string; thumbnail_url: string | null }[]
+    | {
+        slug: string;
+        name: string;
+        name_en?: string | null;
+        module_id: string;
+        thumbnail_url: string | null;
+      }
+    | {
+        slug: string;
+        name: string;
+        name_en?: string | null;
+        module_id: string;
+        thumbnail_url: string | null;
+      }[]
     | null;
 };
 
@@ -32,8 +44,8 @@ type LeaderboardRow = {
   score: number;
   metric: LeaderboardMetric;
   games:
-    | { slug: string; name: string; module_id: string }
-    | { slug: string; name: string; module_id: string }[]
+    | { slug: string; name: string; name_en?: string | null; module_id: string }
+    | { slug: string; name: string; name_en?: string | null; module_id: string }[]
     | null;
 };
 
@@ -80,6 +92,7 @@ function aggregateTopGames(sessions: SessionRow[]): TopGameStat[] {
         gameId: row.game_id,
         slug: game.slug,
         name: game.name,
+        name_en: game.name_en ?? undefined,
         moduleId: game.module_id,
         thumbnailUrl: game.thumbnail_url ?? null,
         sessions: 1,
@@ -110,7 +123,10 @@ function aggregateTopGames(sessions: SessionRow[]): TopGameStat[] {
 }
 
 function buildPersonalRecords(rows: LeaderboardRow[]): PersonalRecord[] {
-  const bestByGame = new Map<string, LeaderboardRow & { gameName: string; slug: string }>();
+  const bestByGame = new Map<
+    string,
+    LeaderboardRow & { gameName: string; gameNameEn?: string; slug: string }
+  >();
 
   for (const row of rows) {
     const game = pickGame(row.games);
@@ -130,6 +146,7 @@ function buildPersonalRecords(rows: LeaderboardRow[]): PersonalRecord[] {
         ...row,
         metric,
         gameName: game.name,
+        gameNameEn: game.name_en ?? undefined,
         slug: game.slug,
       });
     }
@@ -138,6 +155,7 @@ function buildPersonalRecords(rows: LeaderboardRow[]): PersonalRecord[] {
   return [...bestByGame.values()].map((row) => ({
     gameId: row.game_id,
     gameName: row.gameName,
+    gameNameEn: row.gameNameEn,
     slug: row.slug,
     label: `Melhor ${row.metric === "time" ? "tempo" : "pontuação"} — ${row.gameName}`,
     score: Number(row.score),
@@ -188,6 +206,7 @@ async function buildActiveRankings(
       rankings.push({
         gameId: record.gameId,
         gameName: record.gameName,
+        gameNameEn: record.gameNameEn,
         slug: record.slug,
         rank,
         metric: record.metric,
@@ -283,6 +302,7 @@ export async function getPublicPlayerProfile(
         gameId: g.id,
         slug: g.slug,
         name: g.name,
+        name_en: g.name_en,
         moduleId: g.module_id,
         thumbnailUrl: g.thumbnail_url,
         sessions: 10 - i * 2,
@@ -303,7 +323,7 @@ export async function getPublicPlayerProfile(
     .from("game_sessions")
     .select(
       `game_id, duration_seconds, score,
-       games ( slug, name, module_id, thumbnail_url )`
+       games ( slug, name, name_en, module_id, thumbnail_url )`
     )
     .eq("user_id", profile.id);
 
@@ -313,7 +333,7 @@ export async function getPublicPlayerProfile(
     .from("leaderboards")
     .select(
       `game_id, score, metric,
-       games ( slug, name, module_id )`
+       games ( slug, name, name_en, module_id )`
     )
     .eq("user_id", profile.id);
 

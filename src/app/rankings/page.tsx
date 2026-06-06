@@ -3,6 +3,7 @@ import Image from "next/image";
 import { MainShell } from "@/components/layout/main-shell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getServerI18n } from "@/i18n/get-server-i18n";
+import { getGameName } from "@/lib/game-localized";
 import { getPublishedGames } from "@/services/game.service";
 import { getMetricForGame } from "@/services/ranking.service";
 
@@ -15,7 +16,7 @@ export async function generateMetadata() {
 }
 
 export default async function RankingsPage() {
-  const { t } = await getServerI18n();
+  const { t, locale } = await getServerI18n();
   const games = await getPublishedGames();
 
   return (
@@ -41,7 +42,7 @@ export default async function RankingsPage() {
                 />
               </div>
               <div>
-                <p className="font-semibold">{game.name}</p>
+                <p className="font-semibold">{getGameName(game, locale)}</p>
                 <p className="text-sm text-muted-foreground">
                   {getMetricForGame(game.module_id) === "time"
                     ? t("rankings.bestTime")

@@ -5,6 +5,7 @@ import { MainShell } from "@/components/layout/main-shell";
 import { GamePlayerLoading } from "@/features/games/components/game-player-loading";
 import { buildGameMetadata } from "@/lib/seo/metadata";
 import { getServerI18n } from "@/i18n/get-server-i18n";
+import { getGameName } from "@/lib/game-localized";
 import { getCurrentProfile, getSessionUser } from "@/services/auth.service";
 import { getGameBySlug } from "@/services/game.service";
 import { Button } from "@/components/ui/button";
@@ -22,21 +23,25 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
-  const { t } = await getServerI18n();
+  const { t, locale } = await getServerI18n();
   const game = await getGameBySlug(slug);
   if (!game) return { title: t("games.metadataPlay") };
-  return buildGameMetadata({
-    ...game,
-    name: t("games.playTitle", { name: game.name }),
-  });
+  return buildGameMetadata(
+    {
+      ...game,
+      name: t("games.playTitle", { name: getGameName(game, locale) }),
+    },
+    locale
+  );
 }
 
 export default async function PlayGamePage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const { room } = await searchParams;
-  const { t } = await getServerI18n();
+  const { t, locale } = await getServerI18n();
   const game = await getGameBySlug(slug);
   if (!game) notFound();
+  const gameName = getGameName(game, locale);
 
   const user = await getSessionUser();
   const profile = await getCurrentProfile();
@@ -55,14 +60,14 @@ export default async function PlayGamePage({ params, searchParams }: PageProps) 
           href={`/games/${game.slug}`}
           className="hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
         >
-          {game.name}
+          {gameName}
         </Link>
         <span aria-hidden> / </span>
         <span aria-current="page">{t("games.playNav")}</span>
       </nav>
 
       <header className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{game.name}</h1>
+        <h1 className="text-2xl font-bold">{gameName}</h1>
         <div className="text-sm text-muted-foreground">
           {user ? (
             <span>

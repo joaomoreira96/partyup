@@ -13,16 +13,16 @@ export function Providers({
   locale: Locale;
 }) {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem
-      storageKey="partyup-theme"
-      disableTransitionOnChange
-    >
-      <LocaleProvider initialLocale={locale}>
+    <LocaleProvider initialLocale={locale}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem
+        storageKey="partyup-theme"
+        disableTransitionOnChange
+      >
         <UserProvider>{children}</UserProvider>
-      </LocaleProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </LocaleProvider>
   );
 }
