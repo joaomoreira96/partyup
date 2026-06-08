@@ -6,6 +6,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { getSessionUser } from "@/services/auth.service";
 import { getAchievementsForUser } from "@/services/achievements.service";
 import { getPublishedGames } from "@/services/game.service";
+import { getUserFavoriteGames } from "@/services/favorites.service";
 import { getUserStats } from "@/services/stats.service";
 import type {
   ActiveRanking,
@@ -13,6 +14,7 @@ import type {
   PersonalRecord,
   Profile,
   ProfileActivityItem,
+  PublicFavoriteGame,
   PublicPlayerProfile,
   TopGameStat,
 } from "@/types/platform";
@@ -50,6 +52,19 @@ function pickGame<T extends { slug: string; name: string }>(
   raw: T | T[] | null | undefined
 ): T | null {
   return pickOne(raw);
+}
+
+async function getFavoriteGamesForProfile(
+  userId: string
+): Promise<PublicFavoriteGame[]> {
+  const favorites = await getUserFavoriteGames(userId);
+  return favorites.map((game) => ({
+    gameId: game.id,
+    slug: game.slug,
+    name: game.name,
+    name_en: game.name_en ?? undefined,
+    thumbnailUrl: game.thumbnail_url ?? null,
+  }));
 }
 
 async function getProfileByUsername(username: string): Promise<Profile | null> {
@@ -263,6 +278,7 @@ export async function getPublicPlayerProfile(
         bestScore: 1000 * (i + 1),
         metric: getMetricForGame(g.module_id),
       })),
+      favoriteGames: [],
       personalRecords: [],
       activeRankings: [],
       recentActivity: [],
@@ -283,6 +299,8 @@ export async function getPublicPlayerProfile(
 
   const statsRows = (gameStats ?? []) as UserGameStatsRow[];
   const topGames = mapUserGameStatsRows(statsRows);
+  const favoriteGames =
+    topGames.length === 0 ? await getFavoriteGamesForProfile(profile.id) : [];
   const personalRecords = buildPersonalRecords(statsRows);
   const activeRankings = await buildActiveRankings(profile.id, personalRecords);
   const recentActivity = await buildRecentActivity(
@@ -296,6 +314,7 @@ export async function getPublicPlayerProfile(
     achievementCount,
     achievements,
     topGames,
+    favoriteGames,
     personalRecords,
     activeRankings,
     recentActivity,

@@ -61,7 +61,7 @@ export default async function PublicPlayerPage({ params }: PageProps) {
 
       <PublicStatsGrid stats={data.stats} />
 
-      <PublicTopGames games={data.topGames} />
+      <PublicTopGames games={data.topGames} favorites={data.favoriteGames} />
 
       <PublicRecords records={data.personalRecords} />
 

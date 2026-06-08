@@ -342,6 +342,7 @@ export const dictionary: Dictionary = {
     topGames: "Top games",
     games: "Games",
     noGames: "No games recorded yet.",
+    favoriteGames: "Favorite games",
     bestScore: "Best score",
     sessions: "Sessions",
     time: "Time",

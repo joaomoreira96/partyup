@@ -341,6 +341,7 @@ export const dictionary = {
     topGames: "Top jogos",
     games: "Jogos",
     noGames: "Ainda sem jogos registados.",
+    favoriteGames: "Jogos favoritos",
     bestScore: "Melhor score",
     sessions: "Partidas",
     time: "Tempo",

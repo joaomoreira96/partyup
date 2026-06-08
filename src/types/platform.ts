@@ -97,12 +97,21 @@ export type ProfileActivityItem = {
   createdAt: string;
 };
 
+export type PublicFavoriteGame = {
+  gameId: string;
+  slug: string;
+  name: string;
+  name_en?: string;
+  thumbnailUrl: string | null;
+};
+
 export type PublicPlayerProfile = {
   profile: Profile;
   stats: UserStats;
   achievementCount: number;
   achievements: Achievement[];
   topGames: TopGameStat[];
+  favoriteGames: PublicFavoriteGame[];
   personalRecords: PersonalRecord[];
   activeRankings: ActiveRanking[];
   recentActivity: ProfileActivityItem[];
