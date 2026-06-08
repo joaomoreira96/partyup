@@ -4,10 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useI18n } from "@/features/i18n/locale-provider";
 import { getGameName } from "@/lib/game-localized";
-import {
-  formatPlayTimeHours,
-  formatRecordScore,
-} from "@/lib/profile/public-display";
+import { formatRecordScore } from "@/lib/profile/public-display";
 import type { TopGameStat } from "@/types/platform";
 
 export function PublicTopGames({ games }: { games: TopGameStat[] }) {
@@ -22,9 +19,9 @@ export function PublicTopGames({ games }: { games: TopGameStat[] }) {
   }
 
   return (
-    <section aria-labelledby="top-games-heading">
-      <h2 id="top-games-heading" className="text-xl font-bold">
-        {t("publicProfile.topGames")}
+    <section aria-labelledby="games-heading">
+      <h2 id="games-heading" className="text-xl font-bold">
+        {t("publicProfile.games")}
       </h2>
       <ul className="mt-4 space-y-3">
         {games.map((game) => (
@@ -50,25 +47,23 @@ export function PublicTopGames({ games }: { games: TopGameStat[] }) {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">{getGameName(game, locale)}</p>
-                <dl className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                <dl className="mt-2 grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <dt>{t("publicProfile.sessions")}</dt>
-                    <dd className="font-semibold text-foreground tabular-nums">
-                      {game.sessions}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{t("publicProfile.time")}</dt>
-                    <dd className="font-semibold text-foreground">
-                      {formatPlayTimeHours(game.playTimeSeconds, locale)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{t("publicProfile.best")}</dt>
-                    <dd className="font-semibold text-foreground tabular-nums">
+                    <dt className="text-muted-foreground">
+                      {t("publicProfile.bestScore")}
+                    </dt>
+                    <dd className="font-semibold tabular-nums">
                       {game.bestScore > 0
                         ? formatRecordScore(game.bestScore, game.metric)
                         : "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">
+                      {t("publicProfile.sessions")}
+                    </dt>
+                    <dd className="font-semibold tabular-nums">
+                      {game.sessions}
                     </dd>
                   </div>
                 </dl>

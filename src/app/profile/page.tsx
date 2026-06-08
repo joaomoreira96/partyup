@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Clock, Gamepad2, Target } from "lucide-react";
+import { Clock, Gamepad2, Star } from "lucide-react";
 import { MainShell } from "@/components/layout/main-shell";
 import { ProfileHeader } from "@/components/design/profile-header";
 import { AchievementsGrid } from "@/features/profile/components/achievements-grid";
@@ -79,10 +79,10 @@ export default async function ProfilePage() {
       icon: Clock,
     },
     {
-      label: t("profile.stats.record"),
-      hint: t("profile.stats.recordHint"),
-      value: Math.round(stats.highest_score).toLocaleString(numberLocale),
-      icon: Target,
+      label: t("profile.stats.totalScore"),
+      hint: t("profile.stats.totalScoreHint"),
+      value: Math.round(stats.total_score).toLocaleString(numberLocale),
+      icon: Star,
     },
   ];
 

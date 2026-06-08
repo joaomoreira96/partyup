@@ -12,6 +12,7 @@ import { useDuelRoom } from "@/hooks/use-duel-room";
 import { useRoom, type RoomStatsRecordInfo } from "@/hooks/use-room";
 import { isLocalHost } from "@/lib/rooms/host";
 import { getRoomPlayerId } from "@/lib/rooms/player-session";
+import { beginRoomTransition } from "@/lib/rooms/leave-room";
 import { clearDuelMetadataCache } from "@/lib/rooms/duel-meta-cache";
 import { parseDuelMetadata, type DuelPlayerResult } from "@/lib/rooms/duel-state";
 import {
@@ -117,6 +118,7 @@ export function Game({ roomCode, sdk }: GameProps) {
     if (status !== "waiting" || phase !== "lobby") return;
 
     clearDuelMetadataCache(roomCode);
+    beginRoomTransition(roomCode);
     window.location.href = lobbyUrl;
   }, [started, status, phase, roomCode, lobbyUrl]);
 
@@ -208,6 +210,7 @@ export function Game({ roomCode, sdk }: GameProps) {
       if (!result.ok) return;
     }
 
+    beginRoomTransition(roomCode);
     window.location.href = lobbyUrl;
   }, [isHost, rematch, roomCode, lobbyUrl]);
 

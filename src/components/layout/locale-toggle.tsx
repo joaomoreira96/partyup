@@ -2,18 +2,24 @@
 
 import { Languages } from "lucide-react";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { useUserContext } from "@/features/auth/components/user-provider";
+import { savePreferences } from "@/lib/preferences";
 import { Button } from "@/components/ui/button";
 import type { Locale } from "@/i18n/config";
 
 export function LocaleToggle() {
   const { locale, setLocale, t } = useI18n();
+  const { user } = useUserContext();
   const next: Locale = locale === "pt" ? "en" : "pt";
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => setLocale(next)}
+      onClick={() => {
+        setLocale(next);
+        if (user) void savePreferences({ locale: next });
+      }}
       aria-label={locale === "pt" ? t("locale.switchToEn") : t("locale.switchToPt")}
       title={locale === "pt" ? "English" : "Português"}
       className="relative font-semibold text-xs tracking-wide"

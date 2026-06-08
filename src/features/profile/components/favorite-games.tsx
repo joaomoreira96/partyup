@@ -59,6 +59,7 @@ export function FavoriteGamesSection({ games }: { games: GameRecord[] }) {
                       src={game.thumbnail_url ?? "/games/placeholder-thumb.svg"}
                       alt=""
                       fill
+                      unoptimized
                       className="object-cover"
                       sizes="(max-width: 640px) 100vw, 33vw"
                       loading="lazy"

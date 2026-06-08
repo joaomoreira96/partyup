@@ -14,5 +14,5 @@
   <rect x="212" y="180" width="36" height="36" rx="6" fill="#22c55e"/>
   <rect x="248" y="180" width="36" height="36" rx="6" fill="#22c55e"/>
   <text x="520" y="190" fill="#ecfccb" font-family="system-ui,sans-serif" font-size="72" font-weight="800">Snake</text>
-  <text x="520" y="250" fill="#bbf7d0" font-family="system-ui,sans-serif" font-size="28">Arcade clássico no PartyUp</text>
+  <text x="520" y="250" fill="#bbf7d0" font-family="system-ui,sans-serif" font-size="28">Arcade classico no PartyUp</text>
 </svg>

@@ -41,6 +41,7 @@ export function GameCard({
           src={game.thumbnail_url ?? "/games/placeholder-thumb.svg"}
           alt=""
           fill
+          unoptimized
           className="object-cover transition-transform duration-300 motion-reduce:transition-none hover:scale-[1.02] motion-reduce:hover:scale-100"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           loading="lazy"

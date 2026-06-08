@@ -7,8 +7,12 @@ import { countReadyPlayers, isLocalHost, playersAllReady } from "@/lib/rooms/hos
 import { roomPlayerLabel } from "@/lib/rooms/player-label";
 import { useDuelRoom } from "@/hooks/use-duel-room";
 import { useRoom } from "@/hooks/use-room";
-import { getGuestName, setGuestName } from "@/lib/guest";
-import { leaveRoomSession } from "@/lib/rooms/leave-room";
+import { getStoredGuestName, setGuestName } from "@/lib/guest";
+import {
+  beginRoomTransition,
+  endRoomTransition,
+  leaveRoomSession,
+} from "@/lib/rooms/leave-room";
 import { getRoomPlayerId } from "@/lib/rooms/player-session";
 import { useI18n } from "@/features/i18n/locale-provider";
 import { getGameName } from "@/lib/game-localized";
@@ -62,9 +66,10 @@ export function RoomLobby({
   const roomPath = `/rooms/${code}?game=${encodeURIComponent(game.slug)}`;
 
   useEffect(() => {
-    setGuestNameState(getGuestName());
+    setGuestNameState(getStoredGuestName());
     setHasJoined(!!getRoomPlayerId(code));
     setJoinUrl(`${window.location.origin}${roomPath}`);
+    endRoomTransition(code);
     setHydrated(true);
   }, [code, roomPath]);
 
@@ -73,6 +78,7 @@ export function RoomLobby({
     if (!(hasJoined || isRegistered)) return;
     if (!isGameInProgress(status, metadata)) return;
 
+    beginRoomTransition(code);
     window.location.href = `/games/${game.slug}/play?room=${encodeURIComponent(code)}`;
   }, [hydrated, hasJoined, isRegistered, status, metadata, game.slug, code]);
 
@@ -98,9 +104,8 @@ export function RoomLobby({
     };
   }, [canStart, playUrl]);
 
-  const effectiveGuestName = guestName.trim() || "Convidado";
-  const guestNameValid =
-    isRegistered || (effectiveGuestName.length >= 2 && effectiveGuestName !== "Convidado");
+  const trimmedGuestName = guestName.trim();
+  const guestNameValid = isRegistered || trimmedGuestName.length >= 2;
 
   const doJoin = useCallback(async () => {
     if (!guestNameValid && !isRegistered) {
@@ -109,7 +114,7 @@ export function RoomLobby({
     }
 
     if (!isRegistered) {
-      setGuestName(effectiveGuestName);
+      setGuestName(trimmedGuestName);
     }
 
     const result = await join();
@@ -117,7 +122,7 @@ export function RoomLobby({
       setHasJoined(true);
       void refresh();
     }
-  }, [effectiveGuestName, guestNameValid, isRegistered, join, refresh, t]);
+  }, [trimmedGuestName, guestNameValid, isRegistered, join, refresh, t]);
 
   useEffect(() => {
     if (!hydrated || !isRegistered) return;
@@ -180,6 +185,7 @@ export function RoomLobby({
       if (result.data.metadata) {
         saveDuelMetadataCache(code, parseDuelMetadata(result.data.metadata));
       }
+      beginRoomTransition(code);
       window.location.href = result.data.playUrl;
       return;
     }

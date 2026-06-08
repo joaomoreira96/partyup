@@ -13,6 +13,8 @@ import { getServerI18n } from "@/i18n/get-server-i18n";
 import { getPublicPlayerProfile } from "@/services/public-profile.service";
 import { Button } from "@/components/ui/button";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{ username: string }>;
 }
@@ -57,10 +59,7 @@ export default async function PublicPlayerPage({ params }: PageProps) {
 
       <PublicProfileHeader profile={profile} showCountry={showCountry} />
 
-      <PublicStatsGrid
-        stats={data.stats}
-        achievementCount={data.achievementCount}
-      />
+      <PublicStatsGrid stats={data.stats} />
 
       <PublicTopGames games={data.topGames} />
 

@@ -5,9 +5,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { resolveGameModuleId } from "@/lib/games/resolve-module-id";
 import { loadGameModule } from "@/lib/games/registry";
+import { showAchievementUnlockedToasts } from "@/lib/achievements/show-unlocked-toast";
 import { createPartyUpSDK, PartyUpSdkError } from "@/lib/partyup-sdk";
+import type { SdkUnlockedAchievement } from "@/lib/partyup-sdk";
 import { getGuestId, getGuestName } from "@/lib/guest";
-import { leaveRoomSession } from "@/lib/rooms/leave-room";
+import { endRoomTransition, leaveRoomSession } from "@/lib/rooms/leave-room";
 import { getRoomPlayerId } from "@/lib/rooms/player-session";
 import { getMaxScoreForModule, getMetricForGame } from "@/lib/games/metrics";
 import type { GameRecord } from "@/types/platform";
@@ -104,6 +106,13 @@ export function GamePlayer({
         onLifecycleChange: (state) => {
           if (state === "PLAYING") setStatusHint(null);
         },
+        onEvent: (type, payload) => {
+          if (type !== "ACHIEVEMENT_UNLOCKED" || !payload?.achievement) return;
+          showAchievementUnlockedToasts(
+            [payload.achievement as SdkUnlockedAchievement],
+            { title: t("achievements.unlockedTitle") }
+          );
+        },
       });
 
       const wrapper = document.createElement("div");
@@ -152,6 +161,8 @@ export function GamePlayer({
 
   useEffect(() => {
     if (!roomCode) return;
+
+    endRoomTransition(roomCode);
 
     const onPageHide = () => leaveRoomSession(roomCode, getRoomPlayerId(roomCode));
     window.addEventListener("pagehide", onPageHide);

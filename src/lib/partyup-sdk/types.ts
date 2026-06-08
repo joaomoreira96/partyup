@@ -16,12 +16,27 @@ export type GameSdkEventType =
   | "GAME_PAUSED"
   | "GAME_RESUMED"
   | "GAME_FINISHED"
+  | "ACHIEVEMENT_UNLOCKED"
   | "PLAYER_JOINED"
   | "PLAYER_LEFT"
   | "ROOM_CREATED"
   | "ROOM_JOINED"
   | "ROOM_STARTED"
   | "SCORE_SUBMITTED";
+
+export type SdkUnlockedAchievement = {
+  id: string;
+  code?: string;
+  name: string;
+  description: string;
+  icon: string | null;
+  points?: number;
+};
+
+export type EndGameResult = {
+  ranked: boolean;
+  unlockedAchievements: SdkUnlockedAchievement[];
+};
 
 export type AchievementHint =
   | "FIRST_WIN"

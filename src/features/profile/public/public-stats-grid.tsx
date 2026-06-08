@@ -1,19 +1,18 @@
 "use client";
 
-import { Clock, Gamepad2, Star, Trophy } from "lucide-react";
+import { Calendar, Gamepad2, Star, Timer } from "lucide-react";
 import { useI18n } from "@/features/i18n/locale-provider";
-import { formatPlayTimeHours } from "@/lib/profile/public-display";
+import { formatMemberSince } from "@/lib/profile/public-display";
 import type { UserStats } from "@/types/platform";
 
-export function PublicStatsGrid({
-  stats,
-  achievementCount,
-}: {
-  stats: UserStats;
-  achievementCount: number;
-}) {
+export function PublicStatsGrid({ stats }: { stats: UserStats }) {
   const { t, locale } = useI18n();
   const numberLocale = locale === "pt" ? "pt-PT" : "en-US";
+  const hoursPlayed = Math.floor(stats.total_play_time_seconds / 3600);
+  const hoursLabel =
+    hoursPlayed === 1
+      ? t("publicProfile.stats.hour")
+      : t("publicProfile.stats.hours");
 
   const items = [
     {
@@ -22,9 +21,9 @@ export function PublicStatsGrid({
       icon: Gamepad2,
     },
     {
-      label: t("publicProfile.stats.totalTime"),
-      value: formatPlayTimeHours(stats.total_play_time_seconds, locale),
-      icon: Clock,
+      label: t("publicProfile.stats.hoursPlayed"),
+      value: `${hoursPlayed.toLocaleString(numberLocale)} ${hoursLabel}`,
+      icon: Timer,
     },
     {
       label: t("publicProfile.stats.totalScore"),
@@ -32,9 +31,11 @@ export function PublicStatsGrid({
       icon: Star,
     },
     {
-      label: t("publicProfile.stats.achievements"),
-      value: achievementCount.toLocaleString(numberLocale),
-      icon: Trophy,
+      label: t("publicProfile.stats.memberSince"),
+      value: stats.member_since
+        ? formatMemberSince(stats.member_since, locale)
+        : "—",
+      icon: Calendar,
     },
   ];
 

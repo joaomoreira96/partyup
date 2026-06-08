@@ -4,8 +4,6 @@ import { processAchievementHints } from "@/services/achievement-hints.service";
 import { logGameEvent } from "@/services/event.service";
 import { validateScoreForServer } from "@/services/score-validation.service";
 import { recordPlaySession, submitLeaderboardScore } from "@/services/stats.service";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
-import { createClient } from "@/lib/supabase/server";
 import { resolveModuleIdForGame } from "@/services/game.service";
 import type { AchievementHint } from "@/lib/partyup-sdk/types";
 
@@ -71,13 +69,21 @@ export async function POST(request: Request) {
   });
 
   if (!sessionResult.ok && sessionResult.error !== "offline") {
+    console.error("[game/end] recordPlaySession failed:", sessionResult.error);
     return NextResponse.json(
-      { message: "Não foi possível guardar a sessão de jogo." },
+      {
+        message: "Não foi possível guardar a sessão de jogo.",
+        detail: sessionResult.error,
+      },
       { status: 500 }
     );
   }
 
   let ranked = false;
+  const unlockedAchievements = sessionResult.ok
+    ? (sessionResult.unlockedAchievements ?? [])
+    : [];
+
   if (user && submitScore) {
     const scoreResult = await submitLeaderboardScore({
       gameId,
@@ -95,28 +101,11 @@ export async function POST(request: Request) {
         moduleId,
       });
     }
-
-    if (isSupabaseConfigured()) {
-      const supabase = await createClient();
-      const { data: stats } = await supabase
-        .from("user_stats")
-        .select("total_games_played, games_played")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const played = stats?.total_games_played ?? stats?.games_played ?? 1;
-      const { checkPostGameAchievements } = await import(
-        "@/services/achievements.service"
-      );
-      await checkPostGameAchievements(user.id, {
-        gamesPlayed: played,
-        isFirstComplete: played <= 1,
-      });
-    }
   }
 
   return NextResponse.json({
     ok: true,
     ranked,
+    unlockedAchievements,
   });
 }

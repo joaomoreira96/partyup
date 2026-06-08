@@ -25,6 +25,10 @@ export const dictionary: Dictionary = {
     share: "Share",
     creating: "Creating...",
     or: "Or",
+    previous: "Previous",
+    next: "Next",
+    pageOf: "Page {page} of {total}",
+    clear: "Clear",
   },
   locale: {
     switchToEn: "Switch to English",
@@ -95,6 +99,10 @@ export const dictionary: Dictionary = {
     rankingsLeader: "Leader: {name}",
     rankingsNoLeader: "No leader",
     rankingsAction: "View rankings",
+    dailyChampionsTitle: "Champions of the day",
+    dailyChampionsSubtitle:
+      "The players with the most points earned on the platform today.",
+    heroRankingTitle: "Today's top",
     news: {
       item1Title: "PartyUp launched",
       item1Date: "Jun 2026",
@@ -198,6 +206,12 @@ export const dictionary: Dictionary = {
     subtitle: "Top scores per game",
     pageDescription:
       "Each game has its own leaderboard. Sign up to compete.",
+    platformPodiumTitle: "Platform podium",
+    platformPodiumSubtitle:
+      "The 3 players with the most points across all games.",
+    byGameTitle: "Leaderboards by game",
+    searchPlaceholder: "Search game...",
+    noResults: "No games found for your search.",
     bestTime: "Best time",
     bestScore: "Best score",
     pageTitle: "Leaderboard — {name}",
@@ -229,6 +243,8 @@ export const dictionary: Dictionary = {
       time: "Time",
       record: "Best score",
       recordHint: "Your highest score in a single game",
+      totalScore: "Total points",
+      totalScoreHint: "Sum of points from all games on the platform",
       minutes: "{min} min",
     },
     settings: {
@@ -286,11 +302,18 @@ export const dictionary: Dictionary = {
       },
     },
     achievements: "Achievements",
+    achievementsEmpty:
+      "No achievements configured. Confirm the achievements migration was applied to the database.",
     favorites: "Favorite games",
     favoritesEmpty: "You have no favorite games yet. Browse the catalog and save the ones you like.",
     favoritesBrowse: "Browse games",
     tagPending: "Player tag not set — configure below",
     unlockedAt: "Unlocked on {date}",
+    featureHint:
+      "Tap the star to choose which achievements show on your public profile.",
+    addFeatured: "Show on public profile",
+    removeFeatured: "Remove from public profile",
+    featureError: "Could not update the highlight.",
     usernameErrors: {
       empty: "Enter a player tag.",
       tooShort: "Tag must be at least 3 characters.",
@@ -308,14 +331,18 @@ export const dictionary: Dictionary = {
     statsHeading: "Overall stats",
     stats: {
       gamesPlayed: "Games played",
+      hoursPlayed: "Hours played",
       totalTime: "Total time",
       totalScore: "Total score",
+      memberSince: "Member since",
       achievements: "Achievements",
       hour: "Hour",
       hours: "Hours",
     },
     topGames: "Top games",
+    games: "Games",
     noGames: "No games recorded yet.",
+    bestScore: "Best score",
     sessions: "Sessions",
     time: "Time",
     best: "Best",
@@ -326,6 +353,9 @@ export const dictionary: Dictionary = {
     noAchievements: "No achievements unlocked yet.",
     recentActivity: "Recent activity",
     notFound: "Player not found",
+  },
+  achievements: {
+    unlockedTitle: "🏆 Achievement Unlocked",
   },
   auth: {
     email: "Email",

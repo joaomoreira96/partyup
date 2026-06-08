@@ -3,8 +3,10 @@ import { sdkLogger } from "@/lib/partyup-sdk/logger";
 import {
   PartyUpSdkError,
   type EndGamePayload,
+  type EndGameResult,
   type GameLifecycleState,
   type GameSdkEventType,
+  type SdkUnlockedAchievement,
   type PartyUpRoomContext,
   type PartyUpUser,
   type SDKInitOptions,
@@ -143,8 +145,10 @@ export class PartyUpSDK {
     }
   }
 
-  async endGame(payload: EndGamePayload): Promise<void> {
-    if (this.sessionEnded) return;
+  async endGame(payload: EndGamePayload): Promise<EndGameResult> {
+    if (this.sessionEnded) {
+      return { ranked: false, unlockedAchievements: [] };
+    }
 
     const check = validateEndGamePayload(payload, {
       metric: payload.metric ?? this.options.metric,
@@ -179,10 +183,24 @@ export class PartyUpSDK {
         throw new Error(data.message ?? "end_failed");
       }
 
+      const data = (await res.json()) as {
+        ranked?: boolean;
+        unlockedAchievements?: SdkUnlockedAchievement[];
+      };
+
+      const result: EndGameResult = {
+        ranked: Boolean(data.ranked),
+        unlockedAchievements: data.unlockedAchievements ?? [],
+      };
+
       this.sessionEnded = true;
       this.transition("FINISHED");
       this.emit("GAME_FINISHED", { score: payload.score });
+      for (const achievement of result.unlockedAchievements) {
+        this.emit("ACHIEVEMENT_UNLOCKED", { achievement });
+      }
       this.transition("RESULTS");
+      return result;
     } catch (err) {
       sdkLogger.error("endGame failed", { err });
       throw new PartyUpSdkError(

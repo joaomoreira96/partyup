@@ -39,6 +39,7 @@ export function RankingsPreviewSection({
                     src={game.thumbnail_url ?? "/games/placeholder-thumb.svg"}
                     alt=""
                     fill
+                    unoptimized
                     className="object-cover"
                     sizes="56px"
                     loading="lazy"

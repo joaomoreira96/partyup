@@ -23,6 +23,10 @@ export const dictionary = {
     share: "Partilhar",
     creating: "A criar...",
     or: "Ou",
+    previous: "Anterior",
+    next: "Seguinte",
+    pageOf: "Página {page} de {total}",
+    clear: "Limpar",
   },
   locale: {
     switchToEn: "Mudar para inglês",
@@ -93,6 +97,10 @@ export const dictionary = {
     rankingsLeader: "Líder: {name}",
     rankingsNoLeader: "Sem líder",
     rankingsAction: "Ver rankings",
+    dailyChampionsTitle: "Campeões do dia",
+    dailyChampionsSubtitle:
+      "Os jogadores com mais pontos conquistados hoje na plataforma.",
+    heroRankingTitle: "Top de hoje",
     news: {
       item1Title: "PartyUp lançado",
       item1Date: "Jun 2026",
@@ -196,6 +204,12 @@ export const dictionary = {
     subtitle: "Melhores pontuações por jogo",
     pageDescription:
       "Cada jogo tem o seu ranking independente. Regista-te para participar.",
+    platformPodiumTitle: "Pódio da plataforma",
+    platformPodiumSubtitle:
+      "Os 3 jogadores com mais pontos somados em todos os jogos.",
+    byGameTitle: "Rankings por jogo",
+    searchPlaceholder: "Pesquisar jogo...",
+    noResults: "Nenhum jogo encontrado para a tua pesquisa.",
     bestTime: "Melhor tempo",
     bestScore: "Melhor pontuação",
     pageTitle: "Ranking — {name}",
@@ -227,6 +241,8 @@ export const dictionary = {
       time: "Tempo",
       record: "Melhor pontuação",
       recordHint: "A tua maior pontuação numa única partida",
+      totalScore: "Pontos totais",
+      totalScoreHint: "Soma dos pontos de todos os jogos na plataforma",
       minutes: "{min} min",
     },
     settings: {
@@ -284,11 +300,18 @@ export const dictionary = {
       },
     },
     achievements: "Conquistas",
+    achievementsEmpty:
+      "Nenhuma conquista configurada. Confirma que a migration de achievements foi aplicada na base de dados.",
     favorites: "Jogos favoritos",
     favoritesEmpty: "Ainda não tens jogos favoritos. Explora o catálogo e marca os que mais gostas.",
     favoritesBrowse: "Explorar jogos",
     tagPending: "Tag de jogador por definir — configura abaixo",
     unlockedAt: "Desbloqueada em {date}",
+    featureHint:
+      "Toca na estrela para escolher que conquistas aparecem no teu perfil público.",
+    addFeatured: "Mostrar no perfil público",
+    removeFeatured: "Remover do perfil público",
+    featureError: "Não foi possível atualizar o destaque.",
     usernameErrors: {
       empty: "Indica uma tag de jogador.",
       tooShort: "A tag deve ter pelo menos 3 caracteres.",
@@ -307,14 +330,18 @@ export const dictionary = {
     statsHeading: "Estatísticas gerais",
     stats: {
       gamesPlayed: "Jogos jogados",
+      hoursPlayed: "Horas jogadas",
       totalTime: "Tempo total",
       totalScore: "Pontuação total",
+      memberSince: "Membro desde",
       achievements: "Conquistas",
       hour: "Hora",
       hours: "Horas",
     },
     topGames: "Top jogos",
+    games: "Jogos",
     noGames: "Ainda sem jogos registados.",
+    bestScore: "Melhor score",
     sessions: "Partidas",
     time: "Tempo",
     best: "Melhor",
@@ -325,6 +352,9 @@ export const dictionary = {
     noAchievements: "Nenhuma conquista desbloqueada ainda.",
     recentActivity: "Atividade recente",
     notFound: "Jogador não encontrado",
+  },
+  achievements: {
+    unlockedTitle: "🏆 Conquista desbloqueada",
   },
   auth: {
     email: "Email",

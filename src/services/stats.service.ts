@@ -1,14 +1,44 @@
+import { parseUnlockedAchievements } from "@/lib/achievements/parse-unlocked";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { evaluatePlatformAchievements } from "@/services/achievements.service";
 import { logGameEvent } from "@/services/event.service";
-import type { GameSessionResult, UserStats } from "@/types/platform";
+import { getMetricForGame } from "@/lib/games/metrics";
+import type {
+  GameSessionResult,
+  LeaderboardMetric,
+  ProfileGameSummary,
+  ProfileStatsSummary,
+  UnlockedAchievement,
+  UserStats,
+} from "@/types/platform";
+
+export type RecordPlaySessionResult =
+  | { ok: false; error: string }
+  | { ok: true; skipped?: boolean; unlockedAchievements?: UnlockedAchievement[] };
+
+function normalizeRpcPayload(data: unknown): Record<string, unknown> | null {
+  if (data == null) return null;
+  if (typeof data === "string") {
+    try {
+      const parsed = JSON.parse(data) as unknown;
+      return typeof parsed === "object" && parsed !== null
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof data === "object") return data as Record<string, unknown>;
+  return null;
+}
 
 export async function recordPlaySession(params: {
   gameId: string;
   userId?: string;
   result: GameSessionResult;
   sessionMetadata?: Record<string, unknown>;
-}) {
+}): Promise<RecordPlaySessionResult> {
   if (!isSupabaseConfigured()) return { ok: false as const, error: "offline" };
 
   const supabase = await createClient();
@@ -24,16 +54,39 @@ export async function recordPlaySession(params: {
     p_metadata: metadata,
   });
 
-  if (!rpcError && rpcData && typeof rpcData === "object") {
-    const payload = rpcData as { ok?: boolean; skipped?: boolean };
-    if (payload.ok) return { ok: true as const, skipped: Boolean(payload.skipped) };
+  const payload = normalizeRpcPayload(rpcData);
+
+  if (!rpcError && payload) {
+    if (payload.ok) {
+      let unlockedAchievements = parseUnlockedAchievements(
+        payload.unlocked_achievements
+      );
+
+      // RPC antiga (sem unlocked_achievements) ou avaliação vazia — tentar de novo
+      if (
+        params.userId &&
+        !payload.skipped &&
+        unlockedAchievements.length === 0
+      ) {
+        unlockedAchievements = await evaluatePlatformAchievements(params.userId);
+      }
+
+      return {
+        ok: true as const,
+        skipped: Boolean(payload.skipped),
+        unlockedAchievements,
+      };
+    }
   }
 
   if (rpcError) {
     console.warn(
       "[recordPlaySession] RPC record_game_session failed, trying direct insert:",
-      rpcError.message
+      rpcError.message,
+      { gameId: params.gameId, userId: params.userId }
     );
+  } else if (!payload?.ok) {
+    console.warn("[recordPlaySession] RPC returned unexpected payload:", rpcData);
   }
 
   const row: Record<string, unknown> = {
@@ -58,11 +111,92 @@ export async function recordPlaySession(params: {
     return { ok: false as const, error: error.message };
   }
 
+  let unlockedAchievements: UnlockedAchievement[] = [];
+
   if (params.userId) {
     await upsertUserStatsFallback(params.userId, durationSeconds, score);
+    await upsertUserGameStatsFallback(
+      params.userId,
+      params.gameId,
+      durationSeconds,
+      score
+    );
+    unlockedAchievements = await evaluatePlatformAchievements(params.userId);
   }
 
-  return { ok: true as const };
+  return { ok: true as const, unlockedAchievements };
+}
+
+function isBetterGameScore(
+  metric: LeaderboardMetric,
+  current: number,
+  candidate: number
+): boolean {
+  if (candidate <= 0 && metric !== "time") return false;
+  if (current <= 0) return candidate > 0;
+  return metric === "time" ? candidate < current : candidate > current;
+}
+
+async function upsertUserGameStatsFallback(
+  userId: string,
+  gameId: string,
+  durationSeconds: number,
+  score: number
+) {
+  const supabase = await createClient();
+  // Schema hosted: games não tem module_id; o módulo vive em game_builds.build_url.
+  const { data: build } = await supabase
+    .from("game_builds")
+    .select("build_url")
+    .eq("game_id", gameId)
+    .order("is_active", { ascending: false })
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const metric = getMetricForGame(String(build?.build_url ?? "snake"));
+  const now = new Date().toISOString();
+
+  const { data: existing } = await supabase
+    .from("user_game_stats")
+    .select("best_score, sessions_played, play_time_seconds, first_played_at")
+    .eq("user_id", userId)
+    .eq("game_id", gameId)
+    .maybeSingle();
+
+  if (!existing) {
+    await supabase.from("user_game_stats").insert({
+      user_id: userId,
+      game_id: gameId,
+      best_score: score,
+      sessions_played: 1,
+      play_time_seconds: durationSeconds,
+      first_played_at: now,
+      last_played_at: now,
+      updated_at: now,
+    });
+    return;
+  }
+
+  const bestScore = isBetterGameScore(
+    metric,
+    Number(existing.best_score ?? 0),
+    score
+  )
+    ? score
+    : Number(existing.best_score ?? 0);
+
+  await supabase
+    .from("user_game_stats")
+    .update({
+      best_score: bestScore,
+      sessions_played: (existing.sessions_played ?? 0) + 1,
+      play_time_seconds: Number(existing.play_time_seconds ?? 0) + durationSeconds,
+      last_played_at: now,
+      updated_at: now,
+    })
+    .eq("user_id", userId)
+    .eq("game_id", gameId);
 }
 
 async function upsertUserStatsFallback(
@@ -77,6 +211,8 @@ async function upsertUserStatsFallback(
     .eq("user_id", userId)
     .maybeSingle();
 
+  const now = new Date().toISOString();
+
   if (existing) {
     await supabase
       .from("user_stats")
@@ -86,7 +222,8 @@ async function upsertUserStatsFallback(
           (existing.total_play_time_seconds ?? 0) + durationSeconds,
         total_score: Number(existing.total_score ?? 0) + score,
         highest_score: Math.max(Number(existing.highest_score ?? 0), score),
-        updated_at: new Date().toISOString(),
+        updated_at: now,
+        last_played_at: now,
       })
       .eq("user_id", userId);
     return;
@@ -195,23 +332,14 @@ export async function submitLeaderboardScore(params: {
   gameId: string;
   userId: string;
   score: number;
-  metric?: "score" | "time" | "streak";
+  metric?: LeaderboardMetric;
 }) {
   if (!isSupabaseConfigured()) {
     return { ok: false as const, error: "offline" };
   }
 
-  const supabase = await createClient();
-  const row: Record<string, unknown> = {
-    game_id: params.gameId,
-    user_id: params.userId,
-    score: params.score,
-  };
-
-  const { error } = await supabase.from("leaderboards").insert(row);
-
-  if (error) return { ok: false as const, error: error.message };
-
+  // best_score é atualizado no fim da sessão (trigger + record_game_session).
+  // Escritas diretas em user_game_stats falham por RLS com a anon key.
   await logGameEvent({
     eventType: "SCORE_SUBMITTED",
     gameId: params.gameId,
@@ -222,10 +350,49 @@ export async function submitLeaderboardScore(params: {
   return { ok: true as const };
 }
 
+export async function getProfileGames(
+  userId: string
+): Promise<ProfileGameSummary[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("user_game_stats")
+    .select(
+      `game_id, best_score, sessions_played, play_time_seconds, last_played_at,
+       games ( name )`
+    )
+    .eq("user_id", userId)
+    .order("last_played_at", { ascending: false });
+
+  if (error || !data) {
+    console.error("[getProfileGames] select failed:", error?.message);
+    return [];
+  }
+
+  return data.map((row) => {
+    const gameRaw = row.games as { name: string } | { name: string }[] | null;
+    const game = Array.isArray(gameRaw) ? gameRaw[0] : gameRaw;
+
+    return {
+      gameId: row.game_id,
+      gameName: game?.name ?? "Jogo",
+      bestScore: Number(row.best_score ?? 0),
+      sessionsPlayed: Number(row.sessions_played ?? 0),
+      playTime: Number(row.play_time_seconds ?? 0),
+    };
+  });
+}
+
 function mapUserStatsRow(
   userId: string,
   row: Record<string, unknown>
 ): UserStats {
+  const memberSince =
+    (row.member_since as string | undefined) ??
+    (row.created_at as string | undefined) ??
+    null;
+
   return {
     user_id: String(row.user_id ?? userId),
     total_games_played: Number(
@@ -234,7 +401,47 @@ function mapUserStatsRow(
     total_play_time_seconds: Number(row.total_play_time_seconds ?? 0),
     total_score: Number(row.total_score ?? 0),
     highest_score: Number(row.highest_score ?? 0),
+    member_since: memberSince,
+    last_played_at: (row.last_played_at as string | undefined) ?? null,
   };
+}
+
+async function fetchProfileMemberSince(
+  userId: string
+): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("created_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return data?.created_at ?? null;
+}
+
+async function enrichUserStats(
+  userId: string,
+  stats: UserStats
+): Promise<UserStats> {
+  if (stats.member_since) return stats;
+  const memberSince = await fetchProfileMemberSince(userId);
+  return memberSince ? { ...stats, member_since: memberSince } : stats;
+}
+
+export function toProfileStatsSummary(stats: UserStats): ProfileStatsSummary {
+  return {
+    gamesPlayed: stats.total_games_played,
+    hoursPlayed: Math.floor(stats.total_play_time_seconds / 3600),
+    totalScore: stats.total_score,
+    memberSince: stats.member_since ?? null,
+  };
+}
+
+export async function getProfileStatsSummary(
+  userId: string
+): Promise<ProfileStatsSummary> {
+  const stats = await getUserStats(userId);
+  return toProfileStatsSummary(stats);
 }
 
 export async function getUserStats(userId: string): Promise<UserStats> {
@@ -255,7 +462,10 @@ export async function getUserStats(userId: string): Promise<UserStats> {
   });
 
   if (!rpcError && rpcData && typeof rpcData === "object") {
-    return mapUserStatsRow(userId, rpcData as Record<string, unknown>);
+    return enrichUserStats(
+      userId,
+      mapUserStatsRow(userId, rpcData as Record<string, unknown>)
+    );
   }
 
   if (rpcError) {
@@ -270,10 +480,13 @@ export async function getUserStats(userId: string): Promise<UserStats> {
 
   if (error) {
     console.error("[getUserStats] select failed:", error.message);
-    return fallback;
+    return enrichUserStats(userId, fallback);
   }
 
-  if (!data) return fallback;
+  if (!data) return enrichUserStats(userId, fallback);
 
-  return mapUserStatsRow(userId, data as Record<string, unknown>);
+  return enrichUserStats(
+    userId,
+    mapUserStatsRow(userId, data as Record<string, unknown>)
+  );
 }

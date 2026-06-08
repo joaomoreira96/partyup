@@ -27,6 +27,8 @@ export interface Profile {
   public_profile?: boolean;
   show_activity?: boolean;
   show_country?: boolean;
+  theme?: string | null;
+  locale?: string | null;
   role: UserRole;
   is_banned?: boolean;
   banned_until?: string | null;
@@ -47,6 +49,14 @@ export type AdminUserRow = Pick<
   | "ban_reason"
   | "created_at"
 >;
+
+export type ProfileGameSummary = {
+  gameId: string;
+  gameName: string;
+  bestScore: number;
+  sessionsPlayed: number;
+  playTime: number;
+};
 
 export type TopGameStat = {
   gameId: string;
@@ -167,14 +177,33 @@ export interface LeaderboardEntry {
   profile?: Pick<Profile, "display_name" | "username" | "avatar_url">;
 }
 
+export type AchievementCategory =
+  | "platform"
+  | "future_game"
+  | "seasonal"
+  | "event";
+
 export interface Achievement {
   id: string;
   slug: string;
   name: string;
   description: string;
   icon: string | null;
+  category?: AchievementCategory;
+  metric?: string;
+  target_value?: number;
+  points?: number;
+  hidden?: boolean;
+  is_featured?: boolean;
   unlocked_at?: string;
 }
+
+export type UnlockedAchievement = Pick<
+  Achievement,
+  "id" | "name" | "description" | "icon" | "points"
+> & {
+  code?: string;
+};
 
 export interface UserStats {
   user_id: string;
@@ -182,6 +211,16 @@ export interface UserStats {
   total_play_time_seconds: number;
   total_score: number;
   highest_score: number;
+  member_since?: string | null;
+  last_played_at?: string | null;
+}
+
+/** Resposta de GET /api/profile/stats (Documento A). */
+export interface ProfileStatsSummary {
+  gamesPlayed: number;
+  hoursPlayed: number;
+  totalScore: number;
+  memberSince: string | null;
 }
 
 export interface GameStats {

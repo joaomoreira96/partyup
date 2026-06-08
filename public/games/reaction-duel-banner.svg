@@ -10,5 +10,5 @@
   <rect x="120" y="100" width="140" height="200" rx="20" fill="#ef4444"/>
   <rect x="940" y="100" width="140" height="200" rx="20" fill="#22c55e"/>
   <text x="600" y="190" text-anchor="middle" fill="#faf5ff" font-family="system-ui,sans-serif" font-size="64" font-weight="800">Reaction Duel</text>
-  <text x="600" y="250" text-anchor="middle" fill="#ddd6fe" font-family="system-ui,sans-serif" font-size="28">1v1 · Multiplayer · PartyUp</text>
+  <text x="600" y="250" text-anchor="middle" fill="#ddd6fe" font-family="system-ui,sans-serif" font-size="28">1v1 - Multiplayer - PartyUp</text>
 </svg>

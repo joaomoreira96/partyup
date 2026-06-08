@@ -48,9 +48,36 @@ function mapGameRow(row: Record<string, unknown>, categories: Category[]): GameR
   };
 }
 
+// Caminhos locais (/games/*.svg) na BD podem estar desatualizados e apontar para
+// ficheiros inexistentes. Para jogos do catálogo, usamos sempre o asset local
+// correto do catálogo; uploads externos (http/storage) são preservados.
+function isLocalOrEmptyAsset(value?: string | null): boolean {
+  return !value || value.startsWith("/games/");
+}
+
+function resolveGameAssets(
+  game: GameRecord
+): Pick<GameRecord, "banner_url" | "thumbnail_url"> {
+  const staticGame = getStaticGameBySlug(game.slug);
+  if (!staticGame) {
+    return { banner_url: game.banner_url, thumbnail_url: game.thumbnail_url };
+  }
+  return {
+    banner_url:
+      isLocalOrEmptyAsset(game.banner_url) && staticGame.banner_url
+        ? staticGame.banner_url
+        : game.banner_url,
+    thumbnail_url:
+      isLocalOrEmptyAsset(game.thumbnail_url) && staticGame.thumbnail_url
+        ? staticGame.thumbnail_url
+        : game.thumbnail_url,
+  };
+}
+
 function finalizeGameRecord(game: GameRecord): GameRecord {
   return {
     ...game,
+    ...resolveGameAssets(game),
     module_id: resolveGameModuleId(game),
   };
 }

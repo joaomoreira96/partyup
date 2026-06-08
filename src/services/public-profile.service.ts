@@ -17,10 +17,12 @@ import type {
   TopGameStat,
 } from "@/types/platform";
 
-type SessionRow = {
+type UserGameStatsRow = {
   game_id: string;
-  duration_seconds: number | null;
-  score: number | null;
+  best_score: number;
+  sessions_played: number;
+  play_time_seconds: number;
+  last_played_at?: string;
   games:
     | {
         slug: string;
@@ -36,16 +38,6 @@ type SessionRow = {
         module_id: string;
         thumbnail_url: string | null;
       }[]
-    | null;
-};
-
-type LeaderboardRow = {
-  game_id: string;
-  score: number;
-  metric: LeaderboardMetric;
-  games:
-    | { slug: string; name: string; name_en?: string | null; module_id: string }
-    | { slug: string; name: string; name_en?: string | null; module_id: string }[]
     | null;
 };
 
@@ -73,94 +65,53 @@ async function getProfileByUsername(username: string): Promise<Profile | null> {
   return data as Profile | null;
 }
 
-function aggregateTopGames(sessions: SessionRow[]): TopGameStat[] {
-  const map = new Map<
-    string,
-    TopGameStat & { _bestScore: number }
-  >();
-
-  for (const row of sessions) {
-    const game = pickGame(row.games);
-    if (!game) continue;
-    const metric = getMetricForGame(game.module_id);
-    const duration = row.duration_seconds ?? 0;
-    const score = Number(row.score ?? 0);
-    const existing = map.get(row.game_id);
-
-    if (!existing) {
-      map.set(row.game_id, {
-        gameId: row.game_id,
-        slug: game.slug,
-        name: game.name,
-        name_en: game.name_en ?? undefined,
-        moduleId: game.module_id,
-        thumbnailUrl: game.thumbnail_url ?? null,
-        sessions: 1,
-        playTimeSeconds: duration,
-        bestScore: score,
-        metric,
-        _bestScore: score,
-      });
-      continue;
-    }
-
-    existing.sessions += 1;
-    existing.playTimeSeconds += duration;
-    const better =
-      metric === "time"
-        ? score > 0 && (existing._bestScore <= 0 || score < existing._bestScore)
-        : score > existing._bestScore;
-    if (better) {
-      existing._bestScore = score;
-      existing.bestScore = score;
-    }
-  }
-
-  return [...map.values()]
-    .map(({ _bestScore: _, ...rest }) => rest)
-    .sort((a, b) => b.sessions - a.sessions)
-    .slice(0, 5);
-}
-
-function buildPersonalRecords(rows: LeaderboardRow[]): PersonalRecord[] {
-  const bestByGame = new Map<
-    string,
-    LeaderboardRow & { gameName: string; gameNameEn?: string; slug: string }
-  >();
+function mapUserGameStatsRows(rows: UserGameStatsRow[]): TopGameStat[] {
+  const games: TopGameStat[] = [];
 
   for (const row of rows) {
     const game = pickGame(row.games);
     if (!game) continue;
-    const metric = row.metric ?? getMetricForGame(game.module_id);
-    const score = Number(row.score);
-    const key = row.game_id;
-    const prev = bestByGame.get(key);
-    const better =
-      !prev ||
-      (metric === "time"
-        ? score < Number(prev.score)
-        : score > Number(prev.score));
 
-    if (better) {
-      bestByGame.set(key, {
-        ...row,
-        metric,
-        gameName: game.name,
-        gameNameEn: game.name_en ?? undefined,
-        slug: game.slug,
-      });
-    }
+    games.push({
+      gameId: row.game_id,
+      slug: game.slug,
+      name: game.name,
+      name_en: game.name_en ?? undefined,
+      moduleId: game.module_id,
+      thumbnailUrl: game.thumbnail_url ?? null,
+      sessions: Number(row.sessions_played ?? 0),
+      playTimeSeconds: Number(row.play_time_seconds ?? 0),
+      bestScore: Number(row.best_score ?? 0),
+      metric: getMetricForGame(game.module_id),
+    });
   }
 
-  return [...bestByGame.values()].map((row) => ({
-    gameId: row.game_id,
-    gameName: row.gameName,
-    gameNameEn: row.gameNameEn,
-    slug: row.slug,
-    label: `Melhor ${row.metric === "time" ? "tempo" : "pontuação"} — ${row.gameName}`,
-    score: Number(row.score),
-    metric: row.metric,
-  }));
+  return games.sort((a, b) => b.sessions - a.sessions);
+}
+
+function buildPersonalRecords(rows: UserGameStatsRow[]): PersonalRecord[] {
+  const records: PersonalRecord[] = [];
+
+  for (const row of rows) {
+    const game = pickGame(row.games);
+    if (!game) continue;
+
+    const metric = getMetricForGame(game.module_id);
+    const score = Number(row.best_score ?? 0);
+    if (score <= 0) continue;
+
+    records.push({
+      gameId: row.game_id,
+      gameName: game.name,
+      gameNameEn: game.name_en ?? undefined,
+      slug: game.slug,
+      label: `Melhor ${metric === "time" ? "tempo" : "pontuação"} — ${game.name}`,
+      score,
+      metric,
+    });
+  }
+
+  return records;
 }
 
 async function getRankForGame(
@@ -175,14 +126,14 @@ async function getRankForGame(
   const ascending = metric === "time";
 
   let query = supabase
-    .from("leaderboards")
+    .from("user_game_stats")
     .select("*", { count: "exact", head: true })
     .eq("game_id", gameId)
-    .eq("metric", metric);
+    .gt("best_score", 0);
 
   query = ascending
-    ? query.lt("score", userBest)
-    : query.gt("score", userBest);
+    ? query.lt("best_score", userBest)
+    : query.gt("best_score", userBest);
 
   const { count, error } = await query;
   if (error || count === null) return null;
@@ -257,12 +208,13 @@ async function buildRecentActivity(
     const ach = pickOne(
       ua.achievements as { name: string } | { name: string }[] | null
     );
-    if (!ach) continue;
+    const unlockedAt = ua.unlocked_at;
+    if (!ach || !unlockedAt) continue;
     items.push({
-      id: `ach-${ua.unlocked_at}`,
+      id: `ach-${unlockedAt}`,
       type: "achievement",
       message: `Conquista «${ach.name}»`,
-      createdAt: ua.unlocked_at,
+      createdAt: unlockedAt,
     });
   }
 
@@ -287,9 +239,10 @@ export async function getPublicPlayerProfile(
   if (!isPublic && !isOwner) return null;
 
   const stats = await getUserStats(profile.id);
-  const allAchievements = await getAchievementsForUser(profile.id);
-  const achievements = allAchievements.filter((a) => Boolean(a.unlocked_at));
-  const achievementCount = achievements.length;
+  const achievements = await getAchievementsForUser(profile.id);
+  const achievementCount = achievements.filter((a) =>
+    Boolean(a.unlocked_at)
+  ).length;
 
   if (!isSupabaseConfigured()) {
     const games = await getPublishedGames();
@@ -319,25 +272,18 @@ export async function getPublicPlayerProfile(
 
   const supabase = await createClient();
 
-  const { data: sessions } = await supabase
-    .from("game_sessions")
+  const { data: gameStats } = await supabase
+    .from("user_game_stats")
     .select(
-      `game_id, duration_seconds, score,
+      `game_id, best_score, sessions_played, play_time_seconds, last_played_at,
        games ( slug, name, name_en, module_id, thumbnail_url )`
     )
-    .eq("user_id", profile.id);
+    .eq("user_id", profile.id)
+    .order("last_played_at", { ascending: false });
 
-  const topGames = aggregateTopGames((sessions ?? []) as SessionRow[]);
-
-  const { data: lbRows } = await supabase
-    .from("leaderboards")
-    .select(
-      `game_id, score, metric,
-       games ( slug, name, name_en, module_id )`
-    )
-    .eq("user_id", profile.id);
-
-  const personalRecords = buildPersonalRecords((lbRows ?? []) as LeaderboardRow[]);
+  const statsRows = (gameStats ?? []) as UserGameStatsRow[];
+  const topGames = mapUserGameStatsRows(statsRows);
+  const personalRecords = buildPersonalRecords(statsRows);
   const activeRankings = await buildActiveRankings(profile.id, personalRecords);
   const recentActivity = await buildRecentActivity(
     profile.id,

@@ -40,11 +40,13 @@ export function LeaderboardPodium({
 
   if (entries.length < 1) return null;
 
-  const ordered = [
+  // Mantém o alinhamento com PODIUM (2º, 1º, 3º). NÃO filtrar: colapsar o array
+  // faria a única entrada cair no slot 0 (2º lugar) em vez do 1º.
+  const ordered: Array<LeaderboardEntry | undefined> = [
     entries[1],
     entries[0],
     entries[2],
-  ].filter((e): e is LeaderboardEntry => e != null);
+  ];
 
   return (
     <div

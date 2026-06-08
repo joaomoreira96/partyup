@@ -50,6 +50,7 @@ export default async function GameDetailPage({ params }: PageProps) {
           src={game.banner_url ?? "/games/placeholder-banner.svg"}
           alt=""
           fill
+          unoptimized
           className="object-cover"
           priority
           sizes="(max-width: 768px) 100vw, 1152px"

@@ -8,11 +8,13 @@ export {
 export type {
   AchievementHint,
   EndGamePayload,
+  EndGameResult,
   GameConfigSpec,
   GameLifecycleState,
   GameSdkEventType,
   PartyUpRoomContext,
   PartyUpUser,
+  SdkUnlockedAchievement,
   SDKInitOptions,
   SubmitScorePayload,
 } from "@/lib/partyup-sdk/types";
