@@ -502,6 +502,11 @@ export const dictionary = {
     notFound: "Sala não encontrada.",
     missingGame: "Não foi possível identificar o jogo desta sala.",
   },
+  clickFrenzy: {
+    roomFull: "Sala completa",
+    lobbyHint:
+      "Até 8 jogadores. Quando todos estiverem prontos, o anfitrião inicia a partida de 15 segundos.",
+  },
   errors: {
     title: "Algo correu mal",
     description: "Não foi possível carregar esta página. Tenta novamente dentro de momentos.",

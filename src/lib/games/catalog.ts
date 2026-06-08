@@ -16,6 +16,28 @@ export const STATIC_CATEGORIES: Category[] = [
 
 export const STATIC_GAMES: GameRecord[] = [
   {
+    id: "g-click-frenzy",
+    slug: "click-frenzy",
+    name: "Click Frenzy",
+    name_en: "Click Frenzy",
+    description:
+      "Clica o mais rápido possível durante 15 segundos. Vence quem fizer mais cliques. Até 8 jogadores.",
+    thumbnail_url: "/games/click-frenzy-thumb.svg",
+    banner_url: "/games/click-frenzy-banner.svg",
+    module_id: "click-frenzy",
+    guest_allowed: true,
+    supports_multiplayer: true,
+    supports_desktop: true,
+    supports_tablet: true,
+    supports_mobile: true,
+    status: "active",
+    featured: true,
+    categories: [
+      { id: "5", slug: "party", name: "Party", name_en: "Party" },
+      { id: "2", slug: "arcade", name: "Arcade", name_en: "Arcade" },
+    ],
+  },
+  {
     id: "g-duel",
     slug: "reaction-duel",
     name: "Duelo de Reação",

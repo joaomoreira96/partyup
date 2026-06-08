@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" role="img" aria-label="Click Frenzy banner">
+  <defs>
+    <linearGradient id="cfBannerBg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1e1b4b"/>
+      <stop offset="50%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#db2777"/>
+    </linearGradient>
+    <radialGradient id="cfButton" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" style="stop-color:#fde68a"/>
+      <stop offset="100%" style="stop-color:#f59e0b"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#cfBannerBg)"/>
+  <circle cx="250" cy="200" r="150" fill="#ffffff" opacity="0.08"/>
+  <circle cx="250" cy="200" r="110" fill="url(#cfButton)" stroke="#ffffff" stroke-width="6"/>
+  <text x="250" y="218" text-anchor="middle" fill="#7c2d12" font-family="system-ui,sans-serif" font-size="44" font-weight="800">TAP</text>
+  <text x="470" y="190" fill="#ffffff" font-family="system-ui,sans-serif" font-size="76" font-weight="800">Click Frenzy</text>
+  <text x="472" y="250" fill="#f5d0fe" font-family="system-ui,sans-serif" font-size="28">Ate 8 jogadores - 15 segundos - PartyUp</text>
+</svg>

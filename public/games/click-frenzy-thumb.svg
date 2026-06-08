@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Click Frenzy">
+  <defs>
+    <linearGradient id="cfThumbBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1b4b"/>
+      <stop offset="100%" style="stop-color:#db2777"/>
+    </linearGradient>
+    <radialGradient id="cfThumbButton" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" style="stop-color:#fde68a"/>
+      <stop offset="100%" style="stop-color:#f59e0b"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="400" rx="32" fill="url(#cfThumbBg)"/>
+  <circle cx="200" cy="180" r="118" fill="#ffffff" opacity="0.1"/>
+  <circle cx="200" cy="180" r="92" fill="url(#cfThumbButton)" stroke="#ffffff" stroke-width="6"/>
+  <text x="200" y="196" text-anchor="middle" fill="#7c2d12" font-family="system-ui,sans-serif" font-size="40" font-weight="800">TAP</text>
+  <text x="200" y="360" text-anchor="middle" fill="#f5d0fe" font-family="system-ui,sans-serif" font-size="40" font-weight="700">Click Frenzy</text>
+</svg>

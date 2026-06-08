@@ -16,7 +16,9 @@ export function getMaxScoreForModule(moduleId: string): number {
     case "snake":
       return 50_000;
     case "reaction-duel":
-      return 1_000;
+      return 250;
+    case "click-frenzy":
+      return 5_000;
     default:
       return 100_000;
   }

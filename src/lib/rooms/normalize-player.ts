@@ -10,6 +10,10 @@ export function normalizeRoomPlayer(
 ): RoomPlayer {
   const hasReady = Object.prototype.hasOwnProperty.call(row, "is_ready");
   const hasHost = Object.prototype.hasOwnProperty.call(row, "is_host");
+  // O GET /api/rooms devolve a linha ja enriquecida com profile; as atualizacoes
+  // de realtime (linha crua de room_players) nao tem profile. Preferir o profile
+  // da linha recebida e so depois cair no existente, para nao perder o nome.
+  const incomingProfile = (row.profile as RoomPlayer["profile"] | undefined) ?? undefined;
 
   return {
     id: String(row.id),
@@ -21,7 +25,7 @@ export function normalizeRoomPlayer(
     joined_at: String(
       row.joined_at ?? existing?.joined_at ?? new Date().toISOString()
     ),
-    profile: existing?.profile,
+    profile: incomingProfile ?? existing?.profile,
   };
 }
 

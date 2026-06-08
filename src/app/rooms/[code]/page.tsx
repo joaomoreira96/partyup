@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { MainShell } from "@/components/layout/main-shell";
 import { RoomLobby } from "@/features/rooms/components/room-lobby";
+import { ClickFrenzyLobby } from "@/games/click-frenzy/Lobby";
+import { CLICK_FRENZY_SLUG } from "@/games/click-frenzy/constants";
 import { RoomPageLoader } from "@/features/rooms/components/room-page-loader";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
@@ -50,16 +52,27 @@ export default async function RoomPage({ params, searchParams }: PageProps) {
   if (!game) notFound();
 
   const profile = await getCurrentProfile();
+  const isClickFrenzy =
+    game.slug === CLICK_FRENZY_SLUG || game.module_id === CLICK_FRENZY_SLUG;
 
   return (
     <MainShell className="max-w-lg">
       <h1 className="mb-6 text-2xl font-bold">Sala multiplayer</h1>
-      <RoomLobby
-        code={code.toUpperCase()}
-        game={game}
-        offline={offline}
-        profile={profile}
-      />
+      {isClickFrenzy ? (
+        <ClickFrenzyLobby
+          code={code.toUpperCase()}
+          game={game}
+          offline={offline}
+          profile={profile}
+        />
+      ) : (
+        <RoomLobby
+          code={code.toUpperCase()}
+          game={game}
+          offline={offline}
+          profile={profile}
+        />
+      )}
     </MainShell>
   );
 }

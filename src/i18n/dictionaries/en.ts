@@ -500,6 +500,11 @@ export const dictionary: Dictionary = {
     notFound: "Room not found.",
     missingGame: "Could not identify the game for this room.",
   },
+  clickFrenzy: {
+    roomFull: "Room full",
+    lobbyHint:
+      "Up to 8 players. Once everyone is ready, the host starts the 15-second match.",
+  },
   errors: {
     title: "Something went wrong",
     description: "We couldn't load this page. Try again in a moment.",
