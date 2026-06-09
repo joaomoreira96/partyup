@@ -2,6 +2,7 @@ import {
   STATIC_CATEGORIES,
   STATIC_GAMES,
   filterGames,
+  getStaticCatalogSupplement,
   getStaticGameBySlug,
 } from "@/lib/games/catalog";
 import {
@@ -9,6 +10,7 @@ import {
   normalizeGameCategoryLinks,
 } from "@/lib/games/normalize-category-links";
 import { resolveGameCategories } from "@/lib/games/resolve-categories";
+import { isUuid, resolveSlugFromGameId } from "@/lib/games/resolve-game-id";
 import { resolveGameModuleId } from "@/lib/games/resolve-module-id";
 import { isPlayableGame, normalizeGameStatus } from "@/lib/db/mappers";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
@@ -82,6 +84,53 @@ function finalizeGameRecord(game: GameRecord): GameRecord {
   };
 }
 
+async function fetchDbGameIdBySlug(slug: string): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null;
+
+  const supabase = await createClient();
+  const { data: rpcData, error: rpcError } = await supabase.rpc("resolve_game_id", {
+    p_slug: slug,
+  });
+
+  if (!rpcError && rpcData) {
+    const id = String(rpcData).trim();
+    if (isUuid(id)) return id;
+  }
+
+  const { data, error } = await supabase
+    .from("games")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error || !data?.id) return null;
+  return data.id;
+}
+
+/** IDs estáticos (g1, g2…) não existem na BD — resolve para o UUID real. */
+export async function resolveCanonicalGameId(
+  gameId: string,
+  slug?: string
+): Promise<string | null> {
+  const trimmed = gameId.trim();
+  const resolvedSlug = slug ?? resolveSlugFromGameId(trimmed);
+
+  if (resolvedSlug) {
+    const bySlug = await fetchDbGameIdBySlug(resolvedSlug);
+    if (bySlug) return bySlug;
+  }
+
+  if (isUuid(trimmed)) return trimmed;
+
+  return null;
+}
+
+async function hydrateGameDbId(game: GameRecord): Promise<GameRecord> {
+  const dbId = await resolveCanonicalGameId(game.id, game.slug);
+  if (!dbId || dbId === game.id) return game;
+  return { ...game, id: dbId };
+}
+
 async function fetchActiveBuild(gameId: string): Promise<GameBuild | null> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -100,6 +149,33 @@ async function fetchAllCategoriesFromDb(): Promise<Category[]> {
   return (data as Category[]) ?? [];
 }
 
+function parseCatalogSlugRows(data: unknown): string[] {
+  if (!Array.isArray(data)) return [];
+  return data
+    .map((row) => {
+      if (typeof row === "string") return row;
+      if (typeof row === "object" && row !== null && "slug" in row) {
+        return String((row as { slug: unknown }).slug);
+      }
+      return null;
+    })
+    .filter((slug): slug is string => Boolean(slug));
+}
+
+async function fetchKnownGameSlugsFromDb(): Promise<Set<string>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("list_game_catalog_slugs");
+  if (!error && Array.isArray(data)) {
+    const slugs = parseCatalogSlugRows(data);
+    if (slugs.length) return new Set(slugs);
+  }
+
+  const { data: rows, error: selectError } = await supabase.from("games").select("slug");
+  if (selectError || !rows?.length) return new Set();
+
+  return new Set(rows.map((row) => row.slug));
+}
+
 async function fetchGamesFromDb(): Promise<GameRecord[]> {
   const supabase = await createClient();
   const [allCategories, gamesResult] = await Promise.all([
@@ -115,7 +191,11 @@ async function fetchGamesFromDb(): Promise<GameRecord[]> {
   ]);
 
   const { data: games, error } = gamesResult;
-  if (error || !games?.length) return [];
+  if (error) {
+    console.warn("[fetchGamesFromDb] query failed:", error.message);
+    return [];
+  }
+  if (!games?.length) return [];
 
   return Promise.all(
     games.map(async (row) => {
@@ -175,16 +255,19 @@ export async function resolveModuleIdForGame(
 ): Promise<string | undefined> {
   if (!isSupabaseConfigured()) return undefined;
 
+  const canonicalId = await resolveCanonicalGameId(gameId);
+  if (!canonicalId) return undefined;
+
   const supabase = await createClient();
   const { data: game } = await supabase
     .from("games")
     .select("slug")
-    .eq("id", gameId)
+    .eq("id", canonicalId)
     .maybeSingle();
 
   if (!game?.slug) return undefined;
 
-  const build = await fetchActiveBuild(gameId);
+  const build = await fetchActiveBuild(canonicalId);
   return resolveGameModuleId({
     slug: game.slug,
     module_id: "",
@@ -201,22 +284,57 @@ function applyMultiplayerFilter(
   return games.filter((g) => !g.supports_multiplayer);
 }
 
+async function buildStaticCatalogFallback(
+  slugs?: ReadonlySet<string>
+): Promise<GameRecord[]> {
+  const games = slugs
+    ? STATIC_GAMES.filter((g) => isPlayableGame(g) && slugs.has(g.slug))
+    : STATIC_GAMES.filter(isPlayableGame);
+
+  return Promise.all(
+    games.map((game) => hydrateGameDbId(finalizeGameRecord(game)))
+  );
+}
+
+async function resolveCatalogGames(): Promise<GameRecord[]> {
+  if (!isSupabaseConfigured()) {
+    return STATIC_GAMES.filter(isPlayableGame).map(finalizeGameRecord);
+  }
+
+  try {
+    const [fromDb, knownSlugs] = await Promise.all([
+      fetchGamesFromDb(),
+      fetchKnownGameSlugsFromDb(),
+    ]);
+
+    const dbSlugs = new Set(fromDb.map((g) => g.slug));
+    const supplements = await Promise.all(
+      getStaticCatalogSupplement(new Set([...knownSlugs, ...dbSlugs]))
+        .map(finalizeGameRecord)
+        .map((game) => hydrateGameDbId(game))
+    );
+
+    let merged = [...fromDb, ...supplements];
+
+    // BD tem jogos mas a query de ativos falhou (ex.: schema hosted) — usa catálogo estático
+    if (merged.length === 0 && knownSlugs.size > 0) {
+      merged = await buildStaticCatalogFallback(knownSlugs);
+    }
+
+    if (merged.length === 0) {
+      merged = await buildStaticCatalogFallback();
+    }
+
+    return merged;
+  } catch {
+    return buildStaticCatalogFallback();
+  }
+}
+
 export async function getPublishedGames(
   filters?: GameFilters
 ): Promise<GameRecord[]> {
-  let games: GameRecord[] = [];
-
-  if (isSupabaseConfigured()) {
-    try {
-      games = await fetchGamesFromDb();
-    } catch {
-      games = [];
-    }
-  }
-
-  if (!games.length) {
-    games = STATIC_GAMES.filter(isPlayableGame);
-  }
+  const games = await resolveCatalogGames();
 
   const filtered = filterGames(games, {
     category: filters?.category,
@@ -244,7 +362,8 @@ export async function getGameBySlug(slug: string): Promise<GameRecord | null> {
     }
   }
   const staticGame = getStaticGameBySlug(slug);
-  return staticGame && isPlayableGame(staticGame) ? staticGame : null;
+  if (!staticGame || !isPlayableGame(staticGame)) return null;
+  return hydrateGameDbId(finalizeGameRecord(staticGame));
 }
 
 export async function getFeaturedGames(): Promise<GameRecord[]> {

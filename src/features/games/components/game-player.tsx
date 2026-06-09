@@ -89,6 +89,7 @@ export function GamePlayer({
       const metric = getMetricForGame(moduleId);
       const sdk = createPartyUpSDK({
         gameId: game.id,
+        gameSlug: game.slug,
         moduleId,
         metric,
         maxScore: getMaxScoreForModule(moduleId),

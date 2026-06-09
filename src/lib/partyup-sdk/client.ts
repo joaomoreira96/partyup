@@ -78,6 +78,7 @@ export class PartyUpSDK {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           gameId: this.options.gameId,
+          gameSlug: this.options.gameSlug,
           guestId: this.options.user.isGuest ? getGuestId() : undefined,
           roomCode: this.options.room?.code,
         }),
@@ -126,6 +127,7 @@ export class PartyUpSDK {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           gameId: this.options.gameId,
+          gameSlug: this.options.gameSlug,
           score: payload.score,
           metric: payload.metric ?? this.options.metric,
         }),
@@ -166,6 +168,7 @@ export class PartyUpSDK {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           gameId: this.options.gameId,
+          gameSlug: this.options.gameSlug,
           guestId: this.options.user.isGuest ? getGuestId() : undefined,
           result: {
             score: payload.score,

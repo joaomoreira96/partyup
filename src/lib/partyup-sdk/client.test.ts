@@ -21,6 +21,7 @@ describe("PartyUpSDK", () => {
     const states: string[] = [];
     const sdk = createPartyUpSDK({
       gameId: "g1",
+      gameSlug: "memoria-classica",
       moduleId: "memory",
       user: { displayName: "Test", isGuest: true },
       onLifecycleChange: (s) => states.push(s),
@@ -34,6 +35,7 @@ describe("PartyUpSDK", () => {
   it("forbids games from creating rooms", async () => {
     const sdk = createPartyUpSDK({
       gameId: "g1",
+      gameSlug: "memoria-classica",
       moduleId: "memory",
       user: { displayName: "Test", isGuest: false, id: "u1" },
     });
@@ -44,6 +46,7 @@ describe("PartyUpSDK", () => {
   it("rejects invalid submitScore", async () => {
     const sdk = createPartyUpSDK({
       gameId: "g1",
+      gameSlug: "memoria-classica",
       moduleId: "memory",
       user: { displayName: "Test", isGuest: false, id: "u1" },
       maxScore: 1000,
@@ -57,6 +60,7 @@ describe("PartyUpSDK", () => {
   it("calls startGame API and moves to PLAYING", async () => {
     const sdk = createPartyUpSDK({
       gameId: "g1",
+      gameSlug: "memoria-classica",
       moduleId: "memory",
       user: { displayName: "Test", isGuest: true },
     });

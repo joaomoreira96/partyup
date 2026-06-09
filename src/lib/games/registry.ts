@@ -1,31 +1,22 @@
+import { GAME_MODULE_IDS } from "@/lib/games/module-ids";
 import type { GameModule, GameModuleRegistration } from "@/lib/games/types";
 
-const registrations: GameModuleRegistration[] = [
-  {
-    id: "memory",
-    loader: () => import("@/games/memory"),
-  },
-  {
-    id: "reaction",
-    loader: () => import("@/games/reaction"),
-  },
-  {
-    id: "trivia",
-    loader: () => import("@/games/trivia"),
-  },
-  {
-    id: "snake",
-    loader: () => import("@/games/snake"),
-  },
-  {
-    id: "reaction-duel",
-    loader: () => import("@/games/reaction-duel"),
-  },
-  {
-    id: "click-frenzy",
-    loader: () => import("@/games/click-frenzy"),
-  },
-];
+const loaders: Record<
+  (typeof GAME_MODULE_IDS)[number],
+  () => Promise<{ default: GameModule }>
+> = {
+  memory: () => import("@/games/memory"),
+  reaction: () => import("@/games/reaction"),
+  trivia: () => import("@/games/trivia"),
+  snake: () => import("@/games/snake"),
+  "reaction-duel": () => import("@/games/reaction-duel"),
+  "click-frenzy": () => import("@/games/click-frenzy"),
+};
+
+const registrations: GameModuleRegistration[] = GAME_MODULE_IDS.map((id) => ({
+  id,
+  loader: loaders[id],
+}));
 
 const cache = new Map<string, GameModule>();
 

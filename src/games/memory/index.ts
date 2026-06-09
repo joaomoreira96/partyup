@@ -1,5 +1,6 @@
 import type { GameModule, GameMountContext } from "@/lib/games/types";
 import { memoryConfig } from "@/games/memory/config";
+import { memoryScore } from "@/lib/games/scoring";
 
 const EMOJIS = ["🎮", "🎯", "🎲", "🎪", "🎨", "🎭", "🎸", "🎺"];
 
@@ -41,10 +42,18 @@ const game: GameModule = {
       status.textContent = "Jogo de memória iniciado. Encontra os pares.";
     });
 
+    function currentScore() {
+      return memoryScore({
+        moves,
+        durationMs: Date.now() - startTime,
+        pairCount: pairs.length,
+      });
+    }
+
     function updateScore() {
-      const score = Math.max(0, 10000 - moves * 120 - (Date.now() - startTime) / 5);
-      void sdk.submitScore({ score: Math.round(score) }).catch(() => {
-        sdk.emit("SCORE_SUBMITTED", { score: Math.round(score), pending: true });
+      const score = currentScore();
+      void sdk.submitScore({ score }).catch(() => {
+        sdk.emit("SCORE_SUBMITTED", { score, pending: true });
       });
     }
 
@@ -82,11 +91,12 @@ const game: GameModule = {
 
           if (matched === pairs.length) {
             const durationMs = Date.now() - startTime;
-            const finalScore = Math.max(
-              100,
-              Math.round(10000 - moves * 120 - durationMs / 5)
-            );
-            status.textContent = `Vitória em ${moves} jogadas!`;
+            const finalScore = memoryScore({
+              moves,
+              durationMs,
+              pairCount: pairs.length,
+            });
+            status.textContent = `Vitória em ${moves} jogadas! ${finalScore} pontos.`;
             void sdk.endGame({
               score: finalScore,
               durationMs,

@@ -1,5 +1,6 @@
 import type { GameModule, GameMountContext } from "@/lib/games/types";
 import { triviaConfig } from "@/games/trivia/config";
+import { triviaScore } from "@/lib/games/scoring";
 
 const QUESTIONS = [
   {
@@ -35,7 +36,7 @@ const game: GameModule = {
   mount(ctx: GameMountContext) {
     const { container, sdk } = ctx;
     let index = 0;
-    let score = 0;
+    let correctCount = 0;
     const startTime = Date.now();
 
     container.innerHTML = "";
@@ -59,14 +60,21 @@ const game: GameModule = {
     function render() {
       if (index >= QUESTIONS.length) {
         const durationMs = Date.now() - startTime;
-        questionEl.textContent = `Fim! Pontuação: ${score}/${QUESTIONS.length}`;
+        const finalScore = triviaScore({
+          correct: correctCount,
+          total: QUESTIONS.length,
+          durationMs,
+        });
+        questionEl.textContent = `Fim! ${correctCount}/${QUESTIONS.length} corretas · ${finalScore} pontos`;
         optionsEl.innerHTML = "";
         void sdk.endGame({
-          score,
+          score: finalScore,
           durationMs,
           metric: "score",
           achievementHints:
-            score === QUESTIONS.length ? ["PERFECT_SCORE", "FIRST_WIN"] : ["FIRST_WIN"],
+            correctCount === QUESTIONS.length
+              ? ["PERFECT_SCORE", "FIRST_WIN"]
+              : ["FIRST_WIN"],
         });
         return;
       }
@@ -83,9 +91,14 @@ const game: GameModule = {
           "rounded-lg border px-4 py-3 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none";
         btn.textContent = opt;
         btn.addEventListener("click", () => {
-          if (i === current.correct) score += 1;
+          if (i === current.correct) correctCount += 1;
           index += 1;
-          void sdk.submitScore({ score }).catch(() => undefined);
+          const liveScore = triviaScore({
+            correct: correctCount,
+            total: QUESTIONS.length,
+            durationMs: Date.now() - startTime,
+          });
+          void sdk.submitScore({ score: liveScore }).catch(() => undefined);
           render();
         });
         optionsEl.appendChild(btn);

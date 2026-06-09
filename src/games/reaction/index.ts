@@ -1,5 +1,6 @@
 import type { GameModule, GameMountContext } from "@/lib/games/types";
 import { reactionConfig } from "@/games/reaction/config";
+import { reactionScore } from "@/lib/games/scoring";
 
 const game: GameModule = {
   id: "reaction",
@@ -73,17 +74,18 @@ const game: GameModule = {
 
       if (state === "ready") {
         const reactionMs = Date.now() - startWait;
+        const points = reactionScore(reactionMs);
         state = "done";
         cleanupTimers();
-        setPanel("#8b5cf6", `${reactionMs} ms`);
+        setPanel("#8b5cf6", `${points} pts · ${reactionMs} ms`);
         void sdk.endGame({
-          score: reactionMs,
+          score: points,
           durationMs: reactionMs,
-          metric: "time",
+          metric: "score",
           achievementHints: reactionMs < 300 ? ["SPEED_RUN"] : undefined,
         });
         hint.textContent =
-          "Menor tempo = melhor. Regista-te para o ranking oficial.";
+          "Mais pontos = melhor. Regista-te para o ranking oficial.";
       }
     });
 

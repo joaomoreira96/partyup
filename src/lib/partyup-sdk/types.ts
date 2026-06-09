@@ -71,6 +71,8 @@ export interface PartyUpRoomContext {
 
 export interface SDKInitOptions {
   gameId: string;
+  /** Slug estável para resolver o UUID na BD (ex.: memoria-classica). */
+  gameSlug: string;
   moduleId: string;
   user: PartyUpUser;
   room?: PartyUpRoomContext;

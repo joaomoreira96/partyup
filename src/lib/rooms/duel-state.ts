@@ -41,11 +41,7 @@ export const GREEN_DELAY_MAX_MS = 8000;
 export const LATE_JOIN_RED_MS = 1800;
 export const DUEL_TICK_MS = 50;
 
-export function reactionScore(reactionMs: number): number {
-  // Escalado (~1/4) para equilibrar com os outros jogos da plataforma.
-  // Maximo pratico ~250 pontos; reacoes tipicas (~200-500ms) dao ~125-200.
-  return Math.max(0, Math.round((1000 - reactionMs) / 4));
-}
+export { reactionScore } from "@/lib/games/scoring";
 
 export function parseDuelMetadata(raw: unknown): DuelRoomMetadata {
   const base = createInitialDuelMetadata();

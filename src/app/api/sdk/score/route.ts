@@ -3,7 +3,7 @@ import { getSessionUser } from "@/services/auth.service";
 import { logGameEvent } from "@/services/event.service";
 import { validateScoreForServer } from "@/services/score-validation.service";
 import { submitLeaderboardScore } from "@/services/stats.service";
-import { resolveModuleIdForGame } from "@/services/game.service";
+import { resolveCanonicalGameId, resolveModuleIdForGame } from "@/services/game.service";
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
@@ -15,8 +15,9 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { gameId, score, metric } = body as {
+  const { gameId, gameSlug, score, metric } = body as {
     gameId: string;
+    gameSlug?: string;
     score: number;
     metric?: "score" | "time" | "streak";
   };
@@ -25,7 +26,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Jogo inválido." }, { status: 400 });
   }
 
-  const moduleId = await resolveModuleIdForGame(gameId);
+  const canonicalGameId = await resolveCanonicalGameId(gameId, gameSlug);
+  if (!canonicalGameId) {
+    return NextResponse.json(
+      { message: "Jogo não encontrado na plataforma." },
+      { status: 404 }
+    );
+  }
+
+  const moduleId = await resolveModuleIdForGame(canonicalGameId);
 
   const validation = validateScoreForServer({
     score,
@@ -42,7 +51,7 @@ export async function POST(request: Request) {
   }
 
   const result = await submitLeaderboardScore({
-    gameId,
+    gameId: canonicalGameId,
     userId: user.id,
     score,
     metric,
@@ -57,7 +66,7 @@ export async function POST(request: Request) {
 
   await logGameEvent({
     eventType: "SCORE_SUBMITTED",
-    gameId,
+    gameId: canonicalGameId,
     userId: user.id,
     payload: { score, metric },
   });

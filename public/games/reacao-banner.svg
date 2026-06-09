@@ -1,1 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400"><rect fill="#15803d" width="1200" height="400"/><text x="600" y="220" text-anchor="middle" fill="white" font-size="48" font-family="system-ui">Reação</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" role="img" aria-label="Quick Reaction banner">
+  <defs>
+    <linearGradient id="reactionBannerBg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#450a0a"/>
+      <stop offset="40%" style="stop-color:#7f1d1d"/>
+      <stop offset="100%" style="stop-color:#166534"/>
+    </linearGradient>
+    <radialGradient id="reactionBannerGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" style="stop-color:#4ade80"/>
+      <stop offset="100%" style="stop-color:#15803d"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#reactionBannerBg)"/>
+  <rect x="80" y="60" width="200" height="280" rx="20" fill="#7f1d1d" opacity="0.9"/>
+  <rect x="300" y="60" width="120" height="280" rx="16" fill="#22c55e" opacity="0.95"/>
+  <circle cx="200" cy="200" r="72" fill="url(#reactionBannerGlow)" stroke="#ecfccb" stroke-width="4"/>
+  <text x="200" y="212" text-anchor="middle" fill="#052e16" font-family="system-ui,sans-serif" font-size="32" font-weight="800">GO!</text>
+  <text x="520" y="190" fill="#ecfccb" font-family="system-ui,sans-serif" font-size="72" font-weight="800">Quick Reaction</text>
+  <text x="520" y="250" fill="#bbf7d0" font-family="system-ui,sans-serif" font-size="28">Espera pelo verde - Testa os reflexos - PartyUp</text>
+</svg>

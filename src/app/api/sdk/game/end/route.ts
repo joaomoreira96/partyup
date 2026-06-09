@@ -4,13 +4,14 @@ import { processAchievementHints } from "@/services/achievement-hints.service";
 import { logGameEvent } from "@/services/event.service";
 import { validateScoreForServer } from "@/services/score-validation.service";
 import { recordPlaySession, submitLeaderboardScore } from "@/services/stats.service";
-import { resolveModuleIdForGame } from "@/services/game.service";
+import { resolveCanonicalGameId, resolveModuleIdForGame } from "@/services/game.service";
 import type { AchievementHint } from "@/lib/partyup-sdk/types";
 
 export async function POST(request: Request) {
   const body = await request.json();
   const {
     gameId,
+    gameSlug,
     guestId,
     result,
     submitScore,
@@ -18,6 +19,7 @@ export async function POST(request: Request) {
     events,
   } = body as {
     gameId: string;
+    gameSlug?: string;
     guestId?: string;
     result: {
       score: number;
@@ -33,7 +35,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Dados inválidos." }, { status: 400 });
   }
 
-  const moduleId = await resolveModuleIdForGame(gameId);
+  const canonicalGameId = await resolveCanonicalGameId(gameId, gameSlug);
+  if (!canonicalGameId) {
+    return NextResponse.json(
+      { message: "Jogo não encontrado na plataforma." },
+      { status: 404 }
+    );
+  }
+
+  const moduleId = await resolveModuleIdForGame(canonicalGameId);
 
   const validation = validateScoreForServer({
     score: result.score,
@@ -53,13 +63,13 @@ export async function POST(request: Request) {
 
   await logGameEvent({
     eventType: "GAME_FINISHED",
-    gameId,
+    gameId: canonicalGameId,
     userId: user?.id,
     payload: { guestId, score: result.score, events },
   });
 
   const sessionResult = await recordPlaySession({
-    gameId,
+    gameId: canonicalGameId,
     userId: user?.id,
     result,
     sessionMetadata:
@@ -86,7 +96,7 @@ export async function POST(request: Request) {
 
   if (user && submitScore) {
     const scoreResult = await submitLeaderboardScore({
-      gameId,
+      gameId: canonicalGameId,
       userId: user.id,
       score: result.score,
       metric: result.metric,

@@ -12,7 +12,7 @@ describe("validateScoreForServer", () => {
 
   it("rejects impossible memory scores", () => {
     const result = validateScoreForServer({
-      score: 999_999,
+      score: 999,
       durationMs: 5000,
       moduleId: "memory",
       metric: "score",
@@ -21,22 +21,22 @@ describe("validateScoreForServer", () => {
     expect(result.error).toBe("impossible_score");
   });
 
-  it("accepts valid reaction time", () => {
+  it("accepts valid reaction points", () => {
     const result = validateScoreForServer({
-      score: 280,
+      score: 180,
       durationMs: 280,
       moduleId: "reaction",
-      metric: "time",
+      metric: "score",
     });
     expect(result.valid).toBe(true);
   });
 
-  it("rejects reaction time above module limit", () => {
+  it("rejects reaction score above module limit", () => {
     const result = validateScoreForServer({
-      score: 50_000,
-      durationMs: 50_000,
+      score: 500,
+      durationMs: 500,
       moduleId: "reaction",
-      metric: "time",
+      metric: "score",
     });
     expect(result.valid).toBe(false);
   });

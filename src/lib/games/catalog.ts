@@ -89,7 +89,7 @@ export const STATIC_GAMES: GameRecord[] = [
     banner_url: "/games/memoria-banner.svg",
     module_id: "memory",
     guest_allowed: true,
-    supports_multiplayer: true,
+    supports_multiplayer: false,
     supports_desktop: true,
     supports_tablet: true,
     supports_mobile: true,
@@ -125,12 +125,12 @@ export const STATIC_GAMES: GameRecord[] = [
     name: "Trivia Rápida",
     name_en: "Quick Trivia",
     description:
-      "Responde a perguntas de cultura geral contra o relógio. Ideal para jogar com amigos numa sala.",
+      "Responde a perguntas de cultura geral contra o relógio. Ideal para sessões rápidas a solo.",
     thumbnail_url: "/games/trivia-thumb.svg",
     banner_url: "/games/trivia-banner.svg",
     module_id: "trivia",
     guest_allowed: true,
-    supports_multiplayer: true,
+    supports_multiplayer: false,
     supports_desktop: true,
     supports_tablet: true,
     supports_mobile: false,
@@ -146,6 +146,13 @@ export const STATIC_GAMES: GameRecord[] = [
 export function getStaticGameBySlug(slug: string): GameRecord | undefined {
   const game = STATIC_GAMES.find((g) => g.slug === slug);
   return game && isPlayableGame(game) ? game : undefined;
+}
+
+/** Jogos do catálogo estático cujo slug ainda não existe na BD (ex.: migração em falta). */
+export function getStaticCatalogSupplement(knownSlugs: ReadonlySet<string>): GameRecord[] {
+  return STATIC_GAMES.filter(
+    (game) => isPlayableGame(game) && !knownSlugs.has(game.slug)
+  );
 }
 
 export function filterGames(

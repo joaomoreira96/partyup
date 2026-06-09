@@ -32,7 +32,7 @@ insert into public.games (
     '/games/memoria-thumb.svg',
     '/games/memoria-banner.svg',
     'memory',
-    true, true, true,
+    true, false, true,
     true, true, true,
     'active'
   ),
@@ -54,8 +54,30 @@ insert into public.games (
     '/games/trivia-thumb.svg',
     '/games/trivia-banner.svg',
     'trivia',
-    true, true, true,
+    true, false, true,
     true, true, false,
+    'active'
+  ),
+  (
+    'click-frenzy',
+    'Click Frenzy',
+    'Clica o mais rápido possível durante 15 segundos. Vence quem fizer mais cliques. Até 8 jogadores.',
+    '/games/click-frenzy-thumb.svg',
+    '/games/click-frenzy-banner.svg',
+    'click-frenzy',
+    true, true, true,
+    true, true, true,
+    'active'
+  ),
+  (
+    'reaction-duel',
+    'Duelo de Reação',
+    'Duelo de reflexos 1v1. Espera pelo verde e clica mais rápido que o teu adversário.',
+    '/games/reaction-duel-thumb.svg',
+    '/games/reaction-duel-banner.svg',
+    'reaction-duel',
+    true, true, true,
+    true, true, true,
     'active'
   )
 on conflict (slug) do update set
@@ -67,6 +89,8 @@ set name_en = case slug
   when 'memoria-classica' then 'Classic Memory'
   when 'reacao-rapida' then 'Quick Reaction'
   when 'trivia-rapida' then 'Quick Trivia'
+  when 'click-frenzy' then 'Click Frenzy'
+  when 'reaction-duel' then 'Reaction Duel'
   else name
 end
 where name_en is null or name_en = '';
@@ -78,7 +102,9 @@ join public.categories c on (
   (g.slug = 'snake' and c.slug = 'arcade') or
   (g.slug = 'memoria-classica' and c.slug in ('puzzle', 'memory')) or
   (g.slug = 'reacao-rapida' and c.slug = 'arcade') or
-  (g.slug = 'trivia-rapida' and c.slug in ('trivia', 'party'))
+  (g.slug = 'trivia-rapida' and c.slug in ('trivia', 'party')) or
+  (g.slug = 'click-frenzy' and c.slug in ('party', 'arcade')) or
+  (g.slug = 'reaction-duel' and c.slug in ('party', 'arcade'))
 )
 on conflict do nothing;
 

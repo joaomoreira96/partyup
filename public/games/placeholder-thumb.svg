@@ -1,10 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250" role="img" aria-label="Jogo">
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Game">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#a855f7"/>
-      <stop offset="100%" style="stop-color:#6366f1"/>
+    <linearGradient id="placeholderThumbBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e293b"/>
+      <stop offset="100%" style="stop-color:#334155"/>
     </linearGradient>
   </defs>
-  <rect width="400" height="250" fill="url(#g)"/>
-  <text x="200" y="135" text-anchor="middle" fill="white" font-size="48" font-family="system-ui,sans-serif"><®</text>
+  <rect width="400" height="400" rx="32" fill="url(#placeholderThumbBg)"/>
+  <rect x="120" y="120" width="160" height="120" rx="16" fill="#475569" stroke="#94a3b8" stroke-width="4"/>
+  <circle cx="168" cy="168" r="16" fill="#94a3b8"/>
+  <path d="M 120 220 L 200 160 L 280 220 Z" fill="#64748b"/>
+  <text x="200" y="360" text-anchor="middle" fill="#cbd5e1" font-family="system-ui,sans-serif" font-size="28" font-weight="700">PartyUp</text>
 </svg>

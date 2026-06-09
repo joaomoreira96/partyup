@@ -1,3 +1,4 @@
+import { PLATFORM_SCORE_MAX } from "@/lib/games/scoring";
 import type { LeaderboardMetric } from "@/types/platform";
 
 export type ServerScoreValidationInput = {
@@ -11,11 +12,12 @@ const MODULE_LIMITS: Record<
   string,
   { maxScore: number; maxDurationMs: number; metric?: LeaderboardMetric }
 > = {
-  memory: { maxScore: 50_000, maxDurationMs: 600_000, metric: "score" },
-  reaction: { maxScore: 30_000, maxDurationMs: 60_000, metric: "time" },
-  trivia: { maxScore: 100, maxDurationMs: 600_000, metric: "score" },
+  memory: { maxScore: PLATFORM_SCORE_MAX, maxDurationMs: 600_000, metric: "score" },
+  reaction: { maxScore: PLATFORM_SCORE_MAX, maxDurationMs: 60_000, metric: "score" },
+  trivia: { maxScore: PLATFORM_SCORE_MAX, maxDurationMs: 600_000, metric: "score" },
   snake: { maxScore: 50_000, maxDurationMs: 3_600_000, metric: "score" },
-  "reaction-duel": { maxScore: 1_000, maxDurationMs: 120_000, metric: "score" },
+  "reaction-duel": { maxScore: PLATFORM_SCORE_MAX, maxDurationMs: 120_000, metric: "score" },
+  "click-frenzy": { maxScore: 5_000, maxDurationMs: 120_000, metric: "score" },
 };
 
 export function validateScoreForServer(
