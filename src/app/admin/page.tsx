@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import { AdminOverview } from "@/features/admin/components/admin-overview";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { getCurrentProfile, isAdmin } from "@/services/auth.service";
 import { listUsersForAdmin } from "@/services/admin.service";
 import { getPublishedGames } from "@/services/game.service";
 import { countActiveRooms } from "@/services/room.service";
@@ -13,6 +15,11 @@ export const metadata = buildPageMetadata({
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
+  const profile = await getCurrentProfile();
+  if (profile?.role === "developer" && !(await isAdmin())) {
+    redirect("/admin/game-submissions");
+  }
+
   const [games, roomsCount, users] = await Promise.all([
     getPublishedGames(),
     countActiveRooms(),

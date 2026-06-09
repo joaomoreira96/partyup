@@ -50,3 +50,13 @@ export async function isAdmin(): Promise<boolean> {
   const profile = await getCurrentProfile();
   return profile?.role === "admin";
 }
+
+/**
+ * V2: Developers podem submeter jogos via pacote ZIP, mas a publicação continua
+ * a precisar de aprovação de um admin. Este helper centraliza a verificação
+ * para qualquer endpoint do pipeline de submissão.
+ */
+export async function isDeveloperOrAdmin(): Promise<boolean> {
+  const profile = await getCurrentProfile();
+  return profile?.role === "admin" || profile?.role === "developer";
+}

@@ -49,6 +49,8 @@ function mapGameRow(row: Record<string, unknown>, categories: Category[]): GameR
     supports_multiplayer: supportsMultiplayer,
     guest_allowed: game.guest_allowed ?? true,
     supports_tablet: game.supports_tablet ?? game.supports_mobile ?? true,
+    runtime: (game.runtime as GameRecord["runtime"]) ?? "native",
+    sdk_version: game.sdk_version ?? "1.0",
   };
 }
 

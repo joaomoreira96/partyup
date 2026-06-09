@@ -1,0 +1,271 @@
+-- Phase 2 — RPC admin_publish_submission
+-- Publica uma submissão aprovada no catálogo (games + builds + categorias + tags + achievements).
+
+-- Colunas que podem faltar no schema hosted
+alter table public.games
+  add column if not exists guest_allowed boolean not null default true;
+
+alter table public.games
+  add column if not exists supports_tablet boolean not null default true;
+
+alter table public.game_builds
+  add column if not exists updated_at timestamptz not null default now();
+
+create or replace function public.admin_publish_submission(
+  p_id uuid,
+  p_thumbnail_url text,
+  p_banner_url text,
+  p_build_url text
+)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_sub public.game_submissions;
+  v_manifest jsonb;
+  v_slug text;
+  v_game_id uuid;
+  v_existing_runtime public.game_runtime;
+  v_cat_slug text;
+  v_cat_id uuid;
+  v_tag_slug text;
+  v_tag_id uuid;
+  v_ach jsonb;
+  v_ach_code text;
+  v_ach_slug text;
+  v_min_players int;
+  v_max_players int;
+  v_supports_mp boolean;
+begin
+  if not public.is_admin() then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+
+  select * into v_sub
+  from public.game_submissions
+  where id = p_id;
+
+  if not found then
+    raise exception 'submission_not_found' using errcode = 'P0002';
+  end if;
+
+  if v_sub.status <> 'approved' then
+    raise exception 'submission_not_approved' using errcode = 'P0001';
+  end if;
+
+  v_manifest := v_sub.manifest;
+  v_slug := v_sub.slug;
+  v_min_players := greatest(1, coalesce((v_manifest->>'minPlayers')::int, 1));
+  v_max_players := greatest(v_min_players, coalesce((v_manifest->>'maxPlayers')::int, v_min_players));
+  v_supports_mp := v_max_players > 1;
+
+  select g.id, g.runtime
+  into v_game_id, v_existing_runtime
+  from public.games g
+  where g.slug = v_slug
+  limit 1;
+
+  if v_game_id is not null and coalesce(v_existing_runtime::text, 'native') = 'native' then
+    raise exception 'slug_conflict_native' using errcode = 'P0001';
+  end if;
+
+  if v_game_id is null then
+    insert into public.games (
+      slug,
+      name,
+      name_en,
+      description,
+      description_en,
+      thumbnail_url,
+      banner_url,
+      module_id,
+      guest_allowed,
+      supports_multiplayer,
+      supports_desktop,
+      supports_tablet,
+      supports_mobile,
+      min_players,
+      max_players,
+      runtime,
+      sdk_version,
+      status
+    )
+    values (
+      v_slug,
+      coalesce(v_manifest->>'name', v_sub.game_name),
+      coalesce(v_manifest->>'name', v_sub.game_name),
+      coalesce(v_manifest->>'description', ''),
+      coalesce(v_manifest->>'description', ''),
+      p_thumbnail_url,
+      p_banner_url,
+      v_slug,
+      true,
+      v_supports_mp,
+      coalesce((v_manifest->>'supportsDesktop')::boolean, true),
+      coalesce((v_manifest->>'supportsTablet')::boolean, true),
+      coalesce((v_manifest->>'supportsMobile')::boolean, true),
+      v_min_players,
+      v_max_players,
+      'iframe'::public.game_runtime,
+      v_sub.sdk_version,
+      'active'::public.game_status
+    )
+    returning id into v_game_id;
+  else
+    update public.games
+    set
+      name = coalesce(v_manifest->>'name', v_sub.game_name),
+      name_en = coalesce(v_manifest->>'name', v_sub.game_name),
+      description = coalesce(v_manifest->>'description', description),
+      description_en = coalesce(v_manifest->>'description', description_en),
+      thumbnail_url = p_thumbnail_url,
+      banner_url = p_banner_url,
+      module_id = v_slug,
+      supports_multiplayer = v_supports_mp,
+      supports_desktop = coalesce((v_manifest->>'supportsDesktop')::boolean, supports_desktop),
+      supports_tablet = coalesce((v_manifest->>'supportsTablet')::boolean, supports_tablet),
+      supports_mobile = coalesce((v_manifest->>'supportsMobile')::boolean, supports_mobile),
+      min_players = v_min_players,
+      max_players = v_max_players,
+      runtime = 'iframe'::public.game_runtime,
+      sdk_version = v_sub.sdk_version,
+      status = 'active'::public.game_status,
+      updated_at = now()
+    where id = v_game_id;
+  end if;
+
+  -- Legacy is_multiplayer (schema hosted)
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'games' and column_name = 'is_multiplayer'
+  ) then
+    execute format(
+      'update public.games set is_multiplayer = $1 where id = $2'
+    ) using v_supports_mp, v_game_id;
+  end if;
+
+  update public.game_builds
+  set is_active = false, updated_at = now()
+  where game_id = v_game_id and is_active = true;
+
+  update public.game_builds
+  set build_url = p_build_url, is_active = true, updated_at = now()
+  where game_id = v_game_id and version = v_sub.version;
+
+  if not found then
+    insert into public.game_builds (game_id, version, build_url, is_active)
+    values (v_game_id, v_sub.version, p_build_url, true);
+  end if;
+
+  insert into public.game_stats (game_id)
+  values (v_game_id)
+  on conflict (game_id) do nothing;
+
+  -- Categorias declaradas no manifest
+  if jsonb_typeof(v_manifest->'categories') = 'array' then
+    delete from public.game_categories where game_id = v_game_id;
+
+    for v_cat_slug in
+      select distinct lower(trim(value))
+      from jsonb_array_elements_text(v_manifest->'categories') as t(value)
+      where trim(value) <> ''
+    loop
+      select c.id into v_cat_id
+      from public.categories c
+      where c.slug = v_cat_slug;
+
+      if v_cat_id is not null then
+        insert into public.game_categories (game_id, category_id)
+        values (v_game_id, v_cat_id)
+        on conflict do nothing;
+      end if;
+    end loop;
+  end if;
+
+  -- Tags
+  if jsonb_typeof(v_manifest->'tags') = 'array' then
+    delete from public.game_tags where game_id = v_game_id;
+
+    for v_tag_slug in
+      select distinct lower(trim(value))
+      from jsonb_array_elements_text(v_manifest->'tags') as t(value)
+      where trim(value) <> ''
+    loop
+      insert into public.tags (slug, name, name_en)
+      values (
+        v_tag_slug,
+        initcap(replace(v_tag_slug, '-', ' ')),
+        initcap(replace(v_tag_slug, '-', ' '))
+      )
+      on conflict (slug) do update set updated_at = now()
+      returning id into v_tag_id;
+
+      insert into public.game_tags (game_id, tag_id)
+      values (v_game_id, v_tag_id)
+      on conflict do nothing;
+    end loop;
+  end if;
+
+  -- Achievements declarados pelo jogo
+  if jsonb_typeof(v_manifest->'achievements') = 'array' then
+    for v_ach in select * from jsonb_array_elements(v_manifest->'achievements')
+    loop
+      v_ach_code := upper(trim(v_ach->>'code'));
+      if v_ach_code is null or v_ach_code = '' then
+        continue;
+      end if;
+
+      v_ach_slug := lower(regexp_replace(v_ach_code, '[^a-zA-Z0-9]+', '_', 'g'));
+
+      insert into public.achievements (
+        code,
+        slug,
+        name,
+        description,
+        icon,
+        category,
+        game_id,
+        points
+      )
+      values (
+        v_ach_code,
+        v_ach_slug,
+        coalesce(v_ach->>'name', v_ach_code),
+        coalesce(v_ach->>'description', ''),
+        coalesce(v_ach->>'icon', 'trophy'),
+        'future_game',
+        v_game_id,
+        10
+      )
+      on conflict (slug) do update
+      set
+        name = excluded.name,
+        description = excluded.description,
+        game_id = coalesce(public.achievements.game_id, excluded.game_id),
+        updated_at = now();
+    end loop;
+  end if;
+
+  update public.game_submissions
+  set
+    status = 'published',
+    published_game_id = v_game_id,
+    reviewed_by = auth.uid(),
+    reviewed_at = coalesce(reviewed_at, now()),
+    updated_at = now()
+  where id = p_id;
+
+  return json_build_object(
+    'ok', true,
+    'game_id', v_game_id,
+    'slug', v_slug
+  );
+end;
+$$;
+
+revoke all on function public.admin_publish_submission(uuid, text, text, text) from public;
+grant execute on function public.admin_publish_submission(uuid, text, text, text) to authenticated;
+
+notify pgrst, 'reload schema';

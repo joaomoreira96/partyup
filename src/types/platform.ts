@@ -1,6 +1,14 @@
-export type UserRole = "user" | "admin";
+export type UserRole = "user" | "developer" | "admin";
 /** Document 03: draft | active | disabled */
 export type GameStatus = "draft" | "active" | "disabled";
+/** V2: como a plataforma corre o jogo. */
+export type GameRuntime = "native" | "iframe";
+/** V2: pipeline de submissão. */
+export type SubmissionStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "published";
 /** Legacy alias used in static catalog mapping */
 export type LegacyGameStatus = "published" | "archived";
 export type RoomStatus = "waiting" | "playing" | "finished";
@@ -158,6 +166,10 @@ export interface GameRecord {
   thumbnail_url: string | null;
   banner_url: string | null;
   module_id: string;
+  /** V2: como o jogo corre. Default 'native' para os jogos atuais do monorepo. */
+  runtime?: GameRuntime;
+  /** V2: versão do SDK declarada pelo jogo (manifest.sdkVersion). */
+  sdk_version?: string;
   guest_allowed: boolean;
   supports_multiplayer: boolean;
   supports_desktop: boolean;
@@ -167,7 +179,60 @@ export interface GameRecord {
   created_at?: string;
   status: GameStatus;
   categories?: Category[];
+  tags?: Tag[];
   active_build?: GameBuild | null;
+}
+
+/** V2: tags arbitrárias declaradas pelo manifest, validadas pela plataforma. */
+export interface Tag {
+  id: string;
+  slug: string;
+  name: string;
+  name_en: string;
+}
+
+/** V2: manifesto extraído do pacote ZIP e validado pela API. */
+export interface GameManifest {
+  name: string;
+  slug: string;
+  version: string;
+  author: string;
+  description: string;
+  sdkVersion: string;
+  minPlayers: number;
+  maxPlayers: number;
+  supportsDesktop: boolean;
+  supportsTablet: boolean;
+  supportsMobile: boolean;
+  categories?: string[];
+  tags?: string[];
+  achievements?: Array<{
+    code: string;
+    name: string;
+    description: string;
+    icon?: string | null;
+  }>;
+}
+
+/** V2: registo de uma submissão de pacote. */
+export interface GameSubmission {
+  id: string;
+  user_id: string;
+  game_name: string;
+  slug: string;
+  version: string;
+  sdk_version: string;
+  manifest: GameManifest;
+  storage_path: string;
+  size_bytes: number;
+  checksum: string;
+  status: SubmissionStatus;
+  review_notes: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  published_game_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GameBuild {

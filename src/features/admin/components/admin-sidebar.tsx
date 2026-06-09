@@ -2,20 +2,43 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Gamepad2, LayoutDashboard, Newspaper, Shield, Star, Users } from "lucide-react";
+import {
+  Gamepad2,
+  LayoutDashboard,
+  Newspaper,
+  Package,
+  Shield,
+  Star,
+  Users,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const links = [
+const adminLinks = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard, exact: true },
   { href: "/admin/security", label: "Segurança", icon: Shield },
   { href: "/admin/score-reviews", label: "Score Reviews", icon: Star },
   { href: "/admin/users", label: "Utilizadores", icon: Users },
   { href: "/admin/games", label: "Jogos", icon: Gamepad2 },
+  { href: "/admin/game-submissions", label: "Submissões", icon: Package },
   { href: "/admin/news", label: "News", icon: Newspaper },
 ] as const;
 
-export function AdminSidebar() {
+const developerLinks = [
+  {
+    href: "/admin/game-submissions",
+    label: "Submissões",
+    icon: Package,
+    exact: false,
+  },
+] as const;
+
+type AdminSidebarProps = {
+  isAdmin: boolean;
+};
+
+export function AdminSidebar({ isAdmin }: AdminSidebarProps) {
   const pathname = usePathname();
+  const links = isAdmin ? adminLinks : developerLinks;
 
   return (
     <aside className="w-full shrink-0 lg:w-56">

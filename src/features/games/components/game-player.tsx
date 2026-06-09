@@ -190,6 +190,17 @@ export function GamePlayer({
     );
   }
 
+  if (game.runtime === "iframe") {
+    return (
+      <div className="party-card p-6 text-center">
+        <p className="text-muted-foreground">
+          Este jogo usa o runtime iframe (pipeline V2). O runner de execução será
+          activado na próxima fase — o jogo já pode aparecer no catálogo.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {isGuest && (
