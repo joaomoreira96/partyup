@@ -103,3 +103,23 @@ Cobertura mínima recomendada: 80%. Fluxos E2E críticos: home, catálogo, login
 4. Executar checklist acima
 
 Sem alterações estruturais à plataforma.
+
+---
+
+## Jogos iframe (pipeline V2 — developers externos)
+
+Jogos publicados via ZIP **não** usam `registry.ts`. Correm num iframe com `partyup-sdk.js` e comunicação `postMessage`.
+
+Documentação completa: **[PARTYUP-SDK-REFERENCE.md](./PARTYUP-SDK-REFERENCE.md)**
+
+```bash
+npm run package:sandbox   # gera dist/submissions/partyup-sandbox-*.zip
+```
+
+Checklist iframe:
+
+- [ ] `build/index.html` + `build/partyup-sdk.js` no ZIP
+- [ ] `manifest.json` com `sdkVersion: "1.0"`
+- [ ] `PartyUp.ready()` → `startGame()` → `endGame({ score, durationMs })`
+- [ ] Upload → aprovação → publicação no admin
+- [ ] Testar em `/games/{slug}/play` (conta + convidado)

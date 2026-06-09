@@ -163,6 +163,21 @@ export async function listGamesForAdmin(): Promise<AdminGameRow[]> {
 
   if (error || !data) return [];
 
+  const gameIds = data.map((row) => String(row.id));
+  const buildByGameId = new Map<string, GameRecord["active_build"]>();
+
+  if (gameIds.length > 0) {
+    const { data: builds } = await supabase
+      .from("game_builds")
+      .select("id, game_id, version, build_url, is_active")
+      .in("game_id", gameIds)
+      .eq("is_active", true);
+
+    for (const build of builds ?? []) {
+      buildByGameId.set(String(build.game_id), build as GameRecord["active_build"]);
+    }
+  }
+
   const { data: allCategories } = await supabase
     .from("categories")
     .select("id, slug, name, name_en")
@@ -188,6 +203,9 @@ export async function listGamesForAdmin(): Promise<AdminGameRow[]> {
     return {
       ...game,
       status: normalizeGameStatus(String(game.status)),
+      runtime: (game.runtime as GameRecord["runtime"]) ?? "native",
+      sdk_version: game.sdk_version ?? "1.0",
+      active_build: buildByGameId.get(String(game.id)) ?? null,
       categories,
       category_ids,
     };

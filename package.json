@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "package:submission": "node scripts/package-game-submission.mjs",
+    "package:sandbox": "node scripts/package-game-submission.mjs -t scripts/game-submissions/partyup-sandbox"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

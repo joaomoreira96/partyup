@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Plus, Power, PowerOff, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { getGameBuildsPublicUrl } from "@/lib/games/build-url";
 import { getCategoryName } from "@/lib/category-localized";
 import { getGameName } from "@/lib/game-localized";
 import type { AdminGameRow, Category } from "@/types/platform";
@@ -330,6 +331,24 @@ export function AdminGamesManager({
                     <div>
                       <p className="font-medium">{getGameName(game, locale)}</p>
                       <p className="text-xs text-muted-foreground">{game.slug}</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <Badge variant="secondary">
+                          {game.runtime === "iframe" ? "iframe" : "native"}
+                        </Badge>
+                        <Badge variant="outline">SDK {game.sdk_version ?? "1.0"}</Badge>
+                        {game.active_build?.version ? (
+                          <Badge variant="outline">
+                            build v{game.active_build.version}
+                          </Badge>
+                        ) : game.runtime === "iframe" ? (
+                          <Badge variant="destructive">sem build</Badge>
+                        ) : null}
+                      </div>
+                      {game.runtime === "iframe" && game.active_build?.build_url && (
+                        <p className="mt-1 max-w-full truncate text-xs text-muted-foreground">
+                          {getGameBuildsPublicUrl(game.active_build.build_url)}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Button

@@ -15,6 +15,7 @@ import { resolveGameModuleId } from "@/lib/games/resolve-module-id";
 import { isPlayableGame, normalizeGameStatus } from "@/lib/db/mappers";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import type {
   Category,
   DeviceCompatibility,
@@ -137,14 +138,40 @@ async function hydrateGameDbId(game: GameRecord): Promise<GameRecord> {
 
 async function fetchActiveBuild(gameId: string): Promise<GameBuild | null> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("game_builds")
     .select("id, game_id, version, build_url, is_active")
     .eq("game_id", gameId)
     .eq("is_active", true)
     .maybeSingle();
 
-  return (data as GameBuild) ?? null;
+  // #region agent log
+  fetch('http://127.0.0.1:7623/ingest/ede92153-62b3-4507-ad26-5bd6e9c78294',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5e1fc4'},body:JSON.stringify({sessionId:'5e1fc4',location:'game.service.ts:fetchActiveBuild',message:'fetchActiveBuild user client',data:{gameId,hasData:Boolean(data),error:error?.message??null,buildUrl:data?.build_url??null},timestamp:Date.now(),hypothesisId:'H-A-build',runId:'post-fix'})}).catch(()=>{});
+  // #endregion
+
+  if (data) return data as GameBuild;
+
+  const service = createServiceClient();
+  if (service) {
+    const { data: svcData, error: svcError } = await service
+      .from("game_builds")
+      .select("id, game_id, version, build_url, is_active")
+      .eq("game_id", gameId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    // #region agent log
+    fetch('http://127.0.0.1:7623/ingest/ede92153-62b3-4507-ad26-5bd6e9c78294',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5e1fc4'},body:JSON.stringify({sessionId:'5e1fc4',location:'game.service.ts:fetchActiveBuild',message:'fetchActiveBuild service fallback',data:{gameId,hasData:Boolean(svcData),error:svcError?.message??null,buildUrl:svcData?.build_url??null},timestamp:Date.now(),hypothesisId:'H-A-build',runId:'post-fix'})}).catch(()=>{});
+    // #endregion
+
+    if (svcData) return svcData as GameBuild;
+  }
+
+  if (error) {
+    console.warn("[fetchActiveBuild]", gameId, error.message);
+  }
+
+  return null;
 }
 
 async function fetchAllCategoriesFromDb(): Promise<Category[]> {

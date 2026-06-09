@@ -1,4 +1,11 @@
 export { PartyUpSDK, createPartyUpSDK } from "@/lib/partyup-sdk/client";
+export { attachIframeSdkBridge } from "@/lib/partyup-sdk/iframe-bridge";
+export {
+  PARTYUP_SDK_SOURCE,
+  isPartyUpSdkMessage,
+  parsePartyUpSdkMessage,
+} from "@/lib/partyup-sdk/protocol";
+export type { PartyUpSdkInitPayload, PartyUpSdkMessage } from "@/lib/partyup-sdk/protocol";
 export { sdkLogger } from "@/lib/partyup-sdk/logger";
 export {
   validateScore,
