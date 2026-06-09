@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { getClientIp } from "@/lib/security/client-ip";
+import {
+  enforceRateLimits,
+  rateLimitKey,
+  RATE_LIMITS,
+} from "@/lib/security/rate-limit";
+import { processScoreSubmission } from "@/lib/security/score-submit";
 import { getSessionUser } from "@/services/auth.service";
-import { logGameEvent } from "@/services/event.service";
-import { validateScoreForServer } from "@/services/score-validation.service";
-import { submitLeaderboardScore } from "@/services/stats.service";
 import { resolveCanonicalGameId, resolveModuleIdForGame } from "@/services/game.service";
 
 export async function POST(request: Request) {
@@ -11,6 +15,21 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { message: "Inicia sessão para submeter pontuação." },
       { status: 401 }
+    );
+  }
+
+  const ip = getClientIp(request);
+  const rateLimited = await enforceRateLimits(
+    RATE_LIMITS.scoreSubmit.map((r) => ({
+      key: rateLimitKey("score_submit", user.id, ip, r.windowSeconds),
+      ...r,
+    })),
+    { userId: user.id, ip }
+  );
+  if (rateLimited) {
+    return NextResponse.json(
+      { message: "Demasiadas submissões. Aguarda um momento." },
+      { status: 429 }
     );
   }
 
@@ -36,40 +55,23 @@ export async function POST(request: Request) {
 
   const moduleId = await resolveModuleIdForGame(canonicalGameId);
 
-  const validation = validateScoreForServer({
+  const result = await processScoreSubmission({
+    gameId: canonicalGameId,
+    userId: user.id,
     score,
     durationMs: 0,
     metric,
     moduleId,
-  });
-
-  if (!validation.valid) {
-    return NextResponse.json(
-      { message: "Pontuação não aceite." },
-      { status: 422 }
-    );
-  }
-
-  const result = await submitLeaderboardScore({
-    gameId: canonicalGameId,
-    userId: user.id,
-    score,
-    metric,
+    ip,
   });
 
   if (!result.ok) {
-    return NextResponse.json(
-      { message: "Não foi possível guardar a pontuação." },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: result.message }, { status: result.status });
   }
 
-  await logGameEvent({
-    eventType: "SCORE_SUBMITTED",
-    gameId: canonicalGameId,
-    userId: user.id,
-    payload: { score, metric },
+  return NextResponse.json({
+    ok: true,
+    ranked: result.ranked,
+    pendingReview: result.pendingReview,
   });
-
-  return NextResponse.json({ ok: true });
 }

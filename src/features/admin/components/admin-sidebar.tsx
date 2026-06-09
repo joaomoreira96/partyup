@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Gamepad2, LayoutDashboard, Newspaper, Users } from "lucide-react";
+import { Gamepad2, LayoutDashboard, Newspaper, Shield, Star, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard, exact: true },
+  { href: "/admin/security", label: "Segurança", icon: Shield },
+  { href: "/admin/score-reviews", label: "Score Reviews", icon: Star },
   { href: "/admin/users", label: "Utilizadores", icon: Users },
   { href: "/admin/games", label: "Jogos", icon: Gamepad2 },
   { href: "/admin/news", label: "News", icon: Newspaper },

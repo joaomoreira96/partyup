@@ -250,6 +250,10 @@ export function resolveOfflineRoomGame(slug?: string | null): GameRecord | undef
 
 async function cleanupStaleRoomPresence(): Promise<void> {
   const supabase = await createClient();
+  await supabase.rpc("expire_inactive_rooms", { p_idle_minutes: 30 }).then(
+    () => undefined,
+    () => undefined
+  );
   await supabase.rpc("cleanup_stale_room_presence", { p_max_idle_minutes: 10 });
 }
 

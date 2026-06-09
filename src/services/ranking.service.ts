@@ -35,93 +35,63 @@ function normalizeProfile(
 
 
 export async function getGameLeaderboard(
-
   gameId: string,
-
   metric: LeaderboardMetric = "score",
-
   limit = 20
-
 ): Promise<LeaderboardEntry[]> {
-
   if (!isSupabaseConfigured()) return [];
 
-
-
   const supabase = await createClient();
-
   const ascending = metric === "time";
 
-
-
-  let query = supabase
-
-    .from("user_game_stats")
-
+  const { data, error } = await supabase
+    .from("leaderboards")
     .select(
-
-      `user_id, game_id, best_score, last_played_at,
-
-       profiles ( display_name, username, avatar_url )`
-
+      `id, user_id, game_id, score, achieved_at,
+       profiles ( display_name, username, avatar_url, is_banned, banned_until )`
     )
-
     .eq("game_id", gameId)
-
-    .gt("best_score", 0);
-
-
-
-  const { data, error } = await query
-
-    .order("best_score", { ascending })
-
-    .limit(limit);
-
-
+    .eq("status", "approved")
+    .gt("score", 0)
+    .order("score", { ascending })
+    .limit(limit * 2);
 
   if (error || !data) return [];
 
+  const entries: LeaderboardEntry[] = [];
 
-
-  return data.map((row) => {
-
-    const { profiles: profilesRaw, last_played_at, ...entry } = row as {
-
-      user_id: string;
-
-      game_id: string;
-
-      best_score: number;
-
-      last_played_at?: string;
-
-      profiles: LeaderboardEntry["profile"] | LeaderboardEntry["profile"][];
-
+  for (const row of data) {
+    type ProfileRow = LeaderboardEntry["profile"] & {
+      is_banned?: boolean;
+      banned_until?: string | null;
     };
+    const profilesRaw = row.profiles as ProfileRow | ProfileRow[] | null | undefined;
+    if (!profilesRaw) continue;
+    const profile = normalizeProfile(profilesRaw);
+    if (!profile) continue;
 
+    const banRow = profile as ProfileRow;
+    if (
+      banRow.is_banned &&
+      (!banRow.banned_until || new Date(banRow.banned_until) > new Date())
+    ) {
+      continue;
+    }
 
-
-    return {
-
-      id: `${entry.user_id}-${entry.game_id}`,
-
-      game_id: entry.game_id,
-
-      user_id: entry.user_id,
-
-      score: Number(entry.best_score),
-
+    entries.push({
+      id: row.id as string,
+      game_id: row.game_id as string,
+      user_id: row.user_id as string,
+      score: Number(row.score),
       metric,
+      created_at: (row.achieved_at as string) ?? new Date().toISOString(),
+      profile: profile ?? undefined,
+    });
 
-      created_at: last_played_at ?? new Date().toISOString(),
+    if (entries.length >= limit) break;
+  }
 
-      profile: normalizeProfile(profilesRaw) ?? undefined,
-
-    };
-
-  });
-
+  return entries;
 }
 
 

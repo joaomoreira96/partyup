@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
+import { getClientIp } from "@/lib/security/client-ip";
+import {
+  enforceRateLimits,
+  rateLimitKey,
+  RATE_LIMITS,
+} from "@/lib/security/rate-limit";
 import { getSessionUser } from "@/services/auth.service";
+import { assertNotBanned } from "@/services/ban-check.service";
 import { logGameEvent } from "@/services/event.service";
+import { logSecurityEvent } from "@/services/security-event.service";
 import {
   ensureDuelRoundStats,
   findRoomPlayer,
@@ -96,8 +104,42 @@ export async function POST(request: Request) {
     });
   }
 
-  const supabase = await createClient();
+  const ip = getClientIp(request);
   const user = await getSessionUser();
+
+  if (!user) {
+    await logSecurityEvent({
+      eventType: "ROOM_CREATE_DENIED",
+      severity: "medium",
+      ipAddress: ip ?? undefined,
+      metadata: { gameSlug },
+    });
+    return NextResponse.json(
+      { error: "Inicia sessão para criar uma sala." },
+      { status: 403 }
+    );
+  }
+
+  const banCheck = await assertNotBanned(user.id, "room_create", ip);
+  if (banCheck.banned) {
+    return NextResponse.json({ error: banCheck.message }, { status: 403 });
+  }
+
+  const rateLimited = await enforceRateLimits(
+    RATE_LIMITS.roomCreate.map((r) => ({
+      key: rateLimitKey("room_create", user.id, ip, r.windowSeconds),
+      ...r,
+    })),
+    { userId: user.id, ip }
+  );
+  if (rateLimited) {
+    return NextResponse.json(
+      { error: "Demasiadas salas criadas. Tenta novamente mais tarde." },
+      { status: 429 }
+    );
+  }
+
+  const supabase = await createClient();
   let code = generateRoomCode();
   let attempts = 0;
 
@@ -132,6 +174,18 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    if (msg.includes("auth_required") || msg.includes("42501")) {
+      return NextResponse.json(
+        { error: "Inicia sessão para criar uma sala." },
+        { status: 403 }
+      );
+    }
+    if (msg.includes("user_banned")) {
+      return NextResponse.json(
+        { error: "A tua conta está suspensa." },
+        { status: 403 }
+      );
+    }
     return NextResponse.json(
       {
         error: "Não foi possível criar sala.",
@@ -158,7 +212,7 @@ export async function POST(request: Request) {
   await logGameEvent({
     eventType: "ROOM_CREATED",
     gameId: created.game_id,
-    userId: user?.id,
+    userId: user.id,
     roomId: created.room_id,
     payload: { code: created.code },
   });
@@ -215,6 +269,29 @@ export async function PATCH(request: Request) {
   }
 
   if (action === "join") {
+    const ip = getClientIp(request);
+
+    if (user) {
+      const banCheck = await assertNotBanned(user.id, "room_join", ip);
+      if (banCheck.banned) {
+        return NextResponse.json({ error: banCheck.message }, { status: 403 });
+      }
+    }
+
+    const rateLimited = await enforceRateLimits(
+      RATE_LIMITS.roomJoin.map((r) => ({
+        key: rateLimitKey("room_join", user?.id, ip, r.windowSeconds),
+        ...r,
+      })),
+      { userId: user?.id, ip }
+    );
+    if (rateLimited) {
+      return NextResponse.json(
+        { error: "Demasiadas tentativas. Aguarda um momento." },
+        { status: 429 }
+      );
+    }
+
     const playersBefore = await listRoomPlayers(room.id);
 
     const { data: joinData, error: joinError } = await supabase.rpc("join_game_room", {
@@ -225,6 +302,12 @@ export async function PATCH(request: Request) {
 
     if (joinError) {
       const msg = joinError.message.toLowerCase();
+      if (msg.includes("room_expired")) {
+        return NextResponse.json({ error: "Esta sala expirou." }, { status: 410 });
+      }
+      if (msg.includes("user_banned")) {
+        return NextResponse.json({ error: "A tua conta está suspensa." }, { status: 403 });
+      }
       if (msg.includes("room_full") || msg.includes("p0001")) {
         return NextResponse.json({ error: "Sala cheia" }, { status: 400 });
       }
@@ -403,6 +486,12 @@ export async function PATCH(request: Request) {
 
     if (player) {
       await supabase.from("room_players").delete().eq("id", player.id);
+      if (user) {
+        await supabase.rpc("leave_active_room", {
+          p_user_id: user.id,
+          p_room_id: room.id,
+        });
+      }
       await logGameEvent({
         eventType: "PLAYER_LEFT",
         gameId: room.game_id,

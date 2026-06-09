@@ -7,7 +7,7 @@ describe("validateScoreForServer", () => {
       score: -10,
       durationMs: 1000,
     });
-    expect(result.valid).toBe(false);
+    expect(result.outcome).toBe("hard_reject");
   });
 
   it("rejects impossible memory scores", () => {
@@ -17,7 +17,7 @@ describe("validateScoreForServer", () => {
       moduleId: "memory",
       metric: "score",
     });
-    expect(result.valid).toBe(false);
+    expect(result.outcome).toBe("hard_reject");
     expect(result.error).toBe("impossible_score");
   });
 
@@ -28,16 +28,25 @@ describe("validateScoreForServer", () => {
       moduleId: "reaction",
       metric: "score",
     });
-    expect(result.valid).toBe(true);
+    expect(result.outcome).toBe("valid");
   });
 
-  it("rejects reaction score above module limit", () => {
+  it("rejects sub-10ms reaction time", () => {
     const result = validateScoreForServer({
-      score: 500,
+      score: 5,
       durationMs: 500,
       moduleId: "reaction",
-      metric: "score",
+      metric: "time",
     });
-    expect(result.valid).toBe(false);
+    expect(result.outcome).toBe("hard_reject");
+  });
+
+  it("rejects impossible click-frenzy burst", () => {
+    const result = validateScoreForServer({
+      score: 2500,
+      durationMs: 10_000,
+      moduleId: "click-frenzy",
+    });
+    expect(result.outcome).toBe("hard_reject");
   });
 });

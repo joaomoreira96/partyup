@@ -333,21 +333,44 @@ export async function submitLeaderboardScore(params: {
   userId: string;
   score: number;
   metric?: LeaderboardMetric;
+  status?: "approved" | "pending_review" | "rejected";
+  reviewReason?: string;
 }) {
   if (!isSupabaseConfigured()) {
     return { ok: false as const, error: "offline" };
   }
 
-  // best_score é atualizado no fim da sessão (trigger + record_game_session).
-  // Escritas diretas em user_game_stats falham por RLS com a anon key.
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("upsert_leaderboard_best_score", {
+    p_game_id: params.gameId,
+    p_user_id: params.userId,
+    p_score: Math.round(params.score),
+    p_status: params.status ?? "approved",
+    p_review_reason: params.reviewReason ?? null,
+  });
+
+  if (error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("user_banned")) {
+      return { ok: false as const, error: "user_banned" };
+    }
+    console.warn("[submitLeaderboardScore] RPC failed:", error.message);
+    return { ok: false as const, error: error.message };
+  }
+
   await logGameEvent({
     eventType: "SCORE_SUBMITTED",
     gameId: params.gameId,
     userId: params.userId,
-    payload: { score: params.score, metric: params.metric },
+    payload: {
+      score: params.score,
+      metric: params.metric,
+      status: params.status ?? "approved",
+      rpc: data,
+    },
   });
 
-  return { ok: true as const };
+  return { ok: true as const, status: params.status ?? "approved" };
 }
 
 export async function getProfileGames(

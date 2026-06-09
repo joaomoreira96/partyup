@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Users } from "lucide-react";
 import { getGuestName } from "@/lib/guest";
 import { saveRoomPlayerId } from "@/lib/rooms/player-session";
 import { useI18n } from "@/features/i18n/locale-provider";
+import { useUser } from "@/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -18,11 +20,17 @@ export function CreateRoomButton({
 }) {
   const router = useRouter();
   const { t } = useI18n();
+  const { user, loading: authLoading } = useUser();
   const [loading, setLoading] = useState(false);
 
   if (!supportsMultiplayer) return null;
 
   async function createRoom() {
+    if (!user) {
+      router.push(`/auth/login?next=${encodeURIComponent(`/games/${gameSlug}`)}`);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/rooms", {
@@ -51,6 +59,26 @@ export function CreateRoomButton({
     } finally {
       setLoading(false);
     }
+  }
+
+  if (authLoading) {
+    return (
+      <Button variant="secondary" disabled aria-busy>
+        <Users className="size-4" aria-hidden />
+        {t("common.loading")}
+      </Button>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Button variant="secondary" asChild>
+        <Link href={`/auth/login?next=${encodeURIComponent(`/games/${gameSlug}`)}`}>
+          <Users className="size-4" aria-hidden />
+          {t("room.createRoom")}
+        </Link>
+      </Button>
+    );
   }
 
   return (

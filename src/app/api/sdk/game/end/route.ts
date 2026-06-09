@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
+import { getClientIp } from "@/lib/security/client-ip";
+import {
+  enforceRateLimits,
+  rateLimitKey,
+  RATE_LIMITS,
+} from "@/lib/security/rate-limit";
+import { processScoreSubmission } from "@/lib/security/score-submit";
 import { getSessionUser } from "@/services/auth.service";
 import { processAchievementHints } from "@/services/achievement-hints.service";
 import { logGameEvent } from "@/services/event.service";
 import { validateScoreForServer } from "@/services/score-validation.service";
-import { recordPlaySession, submitLeaderboardScore } from "@/services/stats.service";
+import { recordPlaySession } from "@/services/stats.service";
+import { logSecurityEvent } from "@/services/security-event.service";
+import { assertNotBanned } from "@/services/ban-check.service";
 import { resolveCanonicalGameId, resolveModuleIdForGame } from "@/services/game.service";
 import type { AchievementHint } from "@/lib/partyup-sdk/types";
 
@@ -44,6 +53,29 @@ export async function POST(request: Request) {
   }
 
   const moduleId = await resolveModuleIdForGame(canonicalGameId);
+  const ip = getClientIp(request);
+  const user = await getSessionUser();
+
+  if (user && submitScore) {
+    const banCheck = await assertNotBanned(user.id, "score_submit", ip);
+    if (banCheck.banned) {
+      return NextResponse.json({ message: banCheck.message }, { status: 403 });
+    }
+
+    const rateLimited = await enforceRateLimits(
+      RATE_LIMITS.scoreSubmit.map((r) => ({
+        key: rateLimitKey("score_submit", user.id, ip, r.windowSeconds),
+        ...r,
+      })),
+      { userId: user.id, ip }
+    );
+    if (rateLimited) {
+      return NextResponse.json(
+        { message: "Demasiadas submissões. Aguarda um momento." },
+        { status: 429 }
+      );
+    }
+  }
 
   const validation = validateScoreForServer({
     score: result.score,
@@ -52,14 +84,27 @@ export async function POST(request: Request) {
     moduleId,
   });
 
-  if (!validation.valid) {
+  if (validation.outcome === "hard_reject") {
+    if (user) {
+      await logSecurityEvent({
+        eventType: "INVALID_SCORE",
+        severity: "high",
+        userId: user.id,
+        ipAddress: ip ?? undefined,
+        metadata: {
+          gameId: canonicalGameId,
+          score: result.score,
+          durationMs: result.durationMs,
+          moduleId,
+          reason: validation.error,
+        },
+      });
+    }
     return NextResponse.json(
       { message: "Pontuação não aceite. Tenta jogar novamente." },
       { status: 422 }
     );
   }
-
-  const user = await getSessionUser();
 
   await logGameEvent({
     eventType: "GAME_FINISHED",
@@ -90,19 +135,26 @@ export async function POST(request: Request) {
   }
 
   let ranked = false;
+  let pendingReview = false;
   const unlockedAchievements = sessionResult.ok
     ? (sessionResult.unlockedAchievements ?? [])
     : [];
 
   if (user && submitScore) {
-    const scoreResult = await submitLeaderboardScore({
+    const scoreResult = await processScoreSubmission({
       gameId: canonicalGameId,
       userId: user.id,
       score: result.score,
+      durationMs: result.durationMs,
       metric: result.metric,
+      moduleId,
+      ip,
     });
 
-    ranked = scoreResult.ok;
+    if (scoreResult.ok) {
+      ranked = scoreResult.ranked;
+      pendingReview = scoreResult.pendingReview;
+    }
 
     if (achievementHints?.length) {
       await processAchievementHints(user.id, achievementHints, {
@@ -116,6 +168,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     ranked,
+    pendingReview,
     unlockedAchievements,
   });
 }
