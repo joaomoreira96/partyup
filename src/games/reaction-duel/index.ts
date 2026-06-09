@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 import type { GameModule, GameMountContext } from "@/lib/games/types";
+import { LocaleProvider } from "@/features/i18n/locale-provider";
 import { reactionDuelConfig } from "@/games/reaction-duel/config";
 import { Game } from "@/games/reaction-duel/Game";
 
@@ -12,12 +13,15 @@ const game: GameModule = {
 
     const root = createRoot(ctx.container);
     root.render(
-      createElement(Game, {
-        roomCode,
-        gameId: ctx.sdk.getGameId(),
-        userId: ctx.userId,
-        isGuest: ctx.isGuest,
-        sdk: ctx.sdk,
+      createElement(LocaleProvider, {
+        initialLocale: ctx.locale,
+        children: createElement(Game, {
+          roomCode,
+          gameId: ctx.sdk.getGameId(),
+          userId: ctx.userId,
+          isGuest: ctx.isGuest,
+          sdk: ctx.sdk,
+        }),
       })
     );
 

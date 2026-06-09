@@ -10,7 +10,7 @@ import { JoinRoomForm } from "@/features/rooms/components/join-room-form";
 import { buildGameMetadata } from "@/lib/seo/metadata";
 import { getServerI18n } from "@/i18n/get-server-i18n";
 import { getCategoryName } from "@/lib/category-localized";
-import { getGameName } from "@/lib/game-localized";
+import { getGameName, getGameDescription } from "@/lib/game-localized";
 import { getSessionUser } from "@/services/auth.service";
 import { isGameFavorite } from "@/services/favorites.service";
 import { FavoriteGameToggle } from "@/features/games/components/favorite-game-toggle";
@@ -63,7 +63,9 @@ export default async function GameDetailPage({ params }: PageProps) {
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <p className="text-lg text-muted-foreground">{game.description}</p>
+          <p className="text-lg text-muted-foreground">
+            {getGameDescription(game, locale)}
+          </p>
           <div className="flex flex-wrap gap-2">
             {game.categories?.map((cat) => (
               <Badge key={cat.slug} variant="secondary">

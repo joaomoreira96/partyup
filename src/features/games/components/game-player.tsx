@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { resolveGameModuleId } from "@/lib/games/resolve-module-id";
 import { loadGameModule } from "@/lib/games/registry";
+import { useGameMusic } from "@/hooks/use-game-music";
+import { GameMusicToggle } from "@/features/games/components/game-music-toggle";
 import { showAchievementUnlockedToasts } from "@/lib/achievements/show-unlocked-toast";
 import { createPartyUpSDK, PartyUpSdkError } from "@/lib/partyup-sdk";
 import type { SdkUnlockedAchievement } from "@/lib/partyup-sdk";
@@ -42,6 +44,8 @@ export function GamePlayer({
   const [statusHint, setStatusHint] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const displayName = userDisplayName ?? guestName;
+  const moduleId = resolveGameModuleId(game);
+  const { muted, toggleMuted } = useGameMusic(moduleId);
 
   const showFriendlyError = useCallback(
     (err: unknown) => {
@@ -66,7 +70,6 @@ export function GamePlayer({
       setLoading(true);
       setError(null);
 
-      const moduleId = resolveGameModuleId(game);
       const module = await loadGameModule(moduleId);
 
       if (!module) {
@@ -131,6 +134,7 @@ export function GamePlayer({
           isGuest,
           roomId: roomCode,
           multiplayer: Boolean(roomCode),
+          locale,
         });
       } catch (err) {
         showFriendlyError(err);
@@ -156,6 +160,7 @@ export function GamePlayer({
     userId,
     isGuest,
     roomCode,
+    locale,
     showFriendlyError,
     t,
   ]);
@@ -224,6 +229,7 @@ export function GamePlayer({
       )}
 
       <div className="relative w-full">
+        <GameMusicToggle muted={muted} onToggle={toggleMuted} />
         {loading && (
           <div className="absolute inset-0 z-10 flex min-h-[280px] items-center justify-center rounded-[var(--radius-premium)] border border-border bg-card/95">
             <LoadingState label={t("games.play.loading")} />

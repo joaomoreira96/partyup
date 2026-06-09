@@ -22,6 +22,8 @@ export const STATIC_GAMES: GameRecord[] = [
     name_en: "Click Frenzy",
     description:
       "Clica o mais rápido possível durante 15 segundos. Vence quem fizer mais cliques. Até 8 jogadores.",
+    description_en:
+      "Click as fast as you can for 15 seconds. Whoever gets the most clicks wins. Up to 8 players.",
     thumbnail_url: "/games/click-frenzy-thumb.svg",
     banner_url: "/games/click-frenzy-banner.svg",
     module_id: "click-frenzy",
@@ -44,6 +46,8 @@ export const STATIC_GAMES: GameRecord[] = [
     name_en: "Reaction Duel",
     description:
       "Duelo de reflexos 1v1. Espera pelo verde e clica mais rápido que o teu adversário.",
+    description_en:
+      "1v1 reflex duel. Wait for green and click faster than your opponent.",
     thumbnail_url: "/games/reaction-duel-thumb.svg",
     banner_url: "/games/reaction-duel-banner.svg",
     module_id: "reaction-duel",
@@ -66,6 +70,8 @@ export const STATIC_GAMES: GameRecord[] = [
     name_en: "Snake",
     description:
       "Controla a cobra, recolhe comida e tenta obter a maior pontuação possível.",
+    description_en:
+      "Control the snake, collect food and try to get the highest score possible.",
     thumbnail_url: "/games/snake-thumb.svg",
     banner_url: "/games/snake-banner.svg",
     module_id: "snake",
@@ -85,6 +91,8 @@ export const STATIC_GAMES: GameRecord[] = [
     name_en: "Classic Memory",
     description:
       "Encontra todos os pares de cartas o mais rápido possível. Perfeito para sessões curtas e para treinar a memória visual.",
+    description_en:
+      "Find all matching card pairs as fast as you can. Perfect for short sessions and visual memory training.",
     thumbnail_url: "/games/memoria-thumb.svg",
     banner_url: "/games/memoria-banner.svg",
     module_id: "memory",
@@ -107,6 +115,8 @@ export const STATIC_GAMES: GameRecord[] = [
     name_en: "Quick Reaction",
     description:
       "Clica quando o ecrã ficar verde. Testa os teus reflexos e compete pelo melhor tempo de reação.",
+    description_en:
+      "Click when the screen turns green. Test your reflexes and compete for the best reaction time.",
     thumbnail_url: "/games/reacao-thumb.svg",
     banner_url: "/games/reacao-banner.svg",
     module_id: "reaction",
@@ -126,6 +136,8 @@ export const STATIC_GAMES: GameRecord[] = [
     name_en: "Quick Trivia",
     description:
       "Responde a perguntas de cultura geral contra o relógio. Ideal para sessões rápidas a solo.",
+    description_en:
+      "Answer general knowledge questions against the clock. Ideal for quick solo sessions.",
     thumbnail_url: "/games/trivia-thumb.svg",
     banner_url: "/games/trivia-banner.svg",
     module_id: "trivia",
@@ -133,7 +145,7 @@ export const STATIC_GAMES: GameRecord[] = [
     supports_multiplayer: false,
     supports_desktop: true,
     supports_tablet: true,
-    supports_mobile: false,
+    supports_mobile: true,
     status: "active",
     featured: true,
     categories: [
@@ -183,7 +195,7 @@ export function filterGames(
     if (opts.query) {
       const q = opts.query.toLowerCase();
       const haystack =
-        `${game.name} ${game.name_en ?? ""} ${game.description} ${gameCategorySearchText(game.categories)}`.toLowerCase();
+        `${game.name} ${game.name_en ?? ""} ${game.description} ${game.description_en ?? ""} ${gameCategorySearchText(game.categories)}`.toLowerCase();
       if (!haystack.includes(q)) return false;
     }
 

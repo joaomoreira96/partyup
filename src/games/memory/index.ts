@@ -1,4 +1,5 @@
 import type { GameModule, GameMountContext } from "@/lib/games/types";
+import { createGameMountI18n } from "@/lib/games/mount-i18n";
 import { memoryConfig } from "@/games/memory/config";
 import { memoryScore } from "@/lib/games/scoring";
 
@@ -17,7 +18,8 @@ const game: GameModule = {
   id: "memory",
   config: memoryConfig,
   mount(ctx: GameMountContext) {
-    const { container, sdk } = ctx;
+    const { container, sdk, locale } = ctx;
+    const { t } = createGameMountI18n(locale);
     const startTime = Date.now();
     let moves = 0;
     let matched = 0;
@@ -39,7 +41,7 @@ const game: GameModule = {
 
     void sdk.startGame().then(() => {
       started = true;
-      status.textContent = "Jogo de memória iniciado. Encontra os pares.";
+      status.textContent = t("gameModules.memory.started");
     });
 
     function currentScore() {
@@ -51,10 +53,7 @@ const game: GameModule = {
     }
 
     function updateScore() {
-      const score = currentScore();
-      void sdk.submitScore({ score }).catch(() => {
-        sdk.emit("SCORE_SUBMITTED", { score, pending: true });
-      });
+      sdk.reportScore(currentScore());
     }
 
     deck.forEach((emoji, index) => {
@@ -62,7 +61,7 @@ const game: GameModule = {
       btn.type = "button";
       btn.className =
         "aspect-square rounded-xl border-2 border-primary/20 bg-card text-2xl font-bold transition-transform focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:scale-[1.02] motion-reduce:transition-none motion-reduce:hover:scale-100";
-      btn.setAttribute("aria-label", `Carta ${index + 1}, virada`);
+      btn.setAttribute("aria-label", t("gameModules.memory.cardHidden", { n: index + 1 }));
       btn.dataset.emoji = emoji;
       btn.textContent = "?";
 
@@ -71,7 +70,10 @@ const game: GameModule = {
           return;
 
         btn.textContent = emoji;
-        btn.setAttribute("aria-label", `Carta ${index + 1}, ${emoji}`);
+        btn.setAttribute(
+          "aria-label",
+          t("gameModules.memory.cardShown", { n: index + 1, emoji })
+        );
 
         if (!first) {
           first = btn;
@@ -96,7 +98,10 @@ const game: GameModule = {
               durationMs,
               pairCount: pairs.length,
             });
-            status.textContent = `Vitória em ${moves} jogadas! ${finalScore} pontos.`;
+            status.textContent = t("gameModules.memory.victory", {
+              moves,
+              score: finalScore,
+            });
             void sdk.endGame({
               score: finalScore,
               durationMs,
@@ -107,10 +112,13 @@ const game: GameModule = {
         } else {
           setTimeout(() => {
             btn.textContent = "?";
-            btn.setAttribute("aria-label", `Carta ${index + 1}, virada`);
+            btn.setAttribute(
+              "aria-label",
+              t("gameModules.memory.cardHidden", { n: index + 1 })
+            );
             if (first) {
               first.textContent = "?";
-              first.setAttribute("aria-label", "Carta virada");
+              first.setAttribute("aria-label", t("gameModules.memory.cardFaceDown"));
             }
             first = null;
             locked = false;

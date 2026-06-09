@@ -35,6 +35,7 @@ export type GameFilters = {
 function mapGameRow(row: Record<string, unknown>, categories: Category[]): GameRecord {
   const raw = row as Record<string, unknown> & Partial<GameRecord>;
   const game = raw as unknown as GameRecord;
+  const staticGame = getStaticGameBySlug(String(game.slug));
   const supportsMultiplayer =
     game.supports_multiplayer ??
     (typeof raw.is_multiplayer === "boolean" ? raw.is_multiplayer : false);
@@ -42,7 +43,8 @@ function mapGameRow(row: Record<string, unknown>, categories: Category[]): GameR
   return {
     ...game,
     status: normalizeGameStatus(String(game.status)),
-    name_en: game.name_en ?? game.name,
+    name_en: game.name_en ?? staticGame?.name_en ?? game.name,
+    description_en: game.description_en ?? staticGame?.description_en,
     categories,
     supports_multiplayer: supportsMultiplayer,
     guest_allowed: game.guest_allowed ?? true,

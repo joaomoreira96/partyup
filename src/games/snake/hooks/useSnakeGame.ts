@@ -58,9 +58,7 @@ export function useSnakeGame({ sdk, onGameOver }: UseSnakeGameOptions) {
       }
 
       if (result.state.score !== current.score) {
-        void sdk.submitScore({ score: result.state.score, metric: "score" }).catch(() => {
-          sdk.emit("SCORE_SUBMITTED", { score: result.state.score, pending: true });
-        });
+        sdk.reportScore(result.state.score);
       }
 
       scheduleTick();

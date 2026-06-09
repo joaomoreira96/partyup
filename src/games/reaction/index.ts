@@ -1,4 +1,5 @@
 import type { GameModule, GameMountContext } from "@/lib/games/types";
+import { createGameMountI18n } from "@/lib/games/mount-i18n";
 import { reactionConfig } from "@/games/reaction/config";
 import { reactionScore } from "@/lib/games/scoring";
 
@@ -6,7 +7,8 @@ const game: GameModule = {
   id: "reaction",
   config: reactionConfig,
   mount(ctx: GameMountContext) {
-    const { container, sdk } = ctx;
+    const { container, sdk, locale } = ctx;
+    const { t } = createGameMountI18n(locale);
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let startWait = 0;
     let state: "idle" | "waiting" | "ready" | "done" = "idle";
@@ -24,8 +26,7 @@ const game: GameModule = {
     const hint = document.createElement("p");
     hint.id = "reaction-hint";
     hint.className = "text-center text-muted-foreground text-sm";
-    hint.textContent =
-      "Clica para começar. Espera pelo verde e reage o mais rápido possível.";
+    hint.textContent = t("gameModules.reaction.hint");
 
     const live = document.createElement("p");
     live.className = "sr-only";
@@ -45,14 +46,14 @@ const game: GameModule = {
     function startRound() {
       cleanupTimers();
       state = "waiting";
-      setPanel("#334155", "Espera...");
+      setPanel("#334155", t("gameModules.reaction.wait"));
       panel.disabled = false;
       const delay = 1500 + Math.random() * 3000;
 
       timeoutId = setTimeout(() => {
         state = "ready";
         startWait = Date.now();
-        setPanel("#22c55e", "CLICA!");
+        setPanel("#22c55e", t("gameModules.reaction.click"));
       }, delay);
     }
 
@@ -68,7 +69,7 @@ const game: GameModule = {
       if (state === "waiting") {
         cleanupTimers();
         state = "done";
-        setPanel("#ef4444", "Cedo demais! Clica para tentar de novo.");
+        setPanel("#ef4444", t("gameModules.reaction.tooEarly"));
         return;
       }
 
@@ -77,19 +78,21 @@ const game: GameModule = {
         const points = reactionScore(reactionMs);
         state = "done";
         cleanupTimers();
-        setPanel("#8b5cf6", `${points} pts · ${reactionMs} ms`);
+        setPanel(
+          "#8b5cf6",
+          t("gameModules.reaction.pointsMs", { points, ms: reactionMs })
+        );
         void sdk.endGame({
           score: points,
           durationMs: reactionMs,
           metric: "score",
           achievementHints: reactionMs < 300 ? ["SPEED_RUN"] : undefined,
         });
-        hint.textContent =
-          "Mais pontos = melhor. Regista-te para o ranking oficial.";
+        hint.textContent = t("gameModules.reaction.resultHint");
       }
     });
 
-    setPanel("#64748b", "Clica para começar");
+    setPanel("#64748b", t("gameModules.reaction.clickToStart"));
     container.append(panel, hint, live);
 
     return () => {

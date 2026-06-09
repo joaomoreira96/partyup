@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { PartyUpSDK } from "@/lib/partyup-sdk";
 import { Countdown } from "@/games/reaction-duel/Countdown";
-import { clickedProgress, COPY, REACTION_DUEL_SLUG } from "@/games/reaction-duel/constants";
+import { REACTION_DUEL_SLUG } from "@/games/reaction-duel/constants";
 import { ReactionScreen } from "@/games/reaction-duel/ReactionScreen";
 import { Results } from "@/games/reaction-duel/Results";
+import { useI18n } from "@/features/i18n/locale-provider";
 import { useDisplayDuelPhase } from "@/hooks/use-display-duel-phase";
 import { useDuelRoom } from "@/hooks/use-duel-room";
 import { useRoom, type RoomStatsRecordInfo } from "@/hooks/use-room";
@@ -34,6 +35,7 @@ type GameProps = {
 };
 
 export function Game({ roomCode, sdk }: GameProps) {
+  const { t } = useI18n();
   const {
     metadata,
     players,
@@ -217,12 +219,12 @@ export function Game({ roomCode, sdk }: GameProps) {
   if (!roomCode) {
     return (
       <div className="rounded-xl border border-border bg-card p-6 text-center">
-        <p className="text-muted-foreground">{COPY.noRoom}</p>
+        <p className="text-muted-foreground">{t("gameModules.reactionDuel.noRoom")}</p>
         <Link
           href={`/games/${REACTION_DUEL_SLUG}`}
           className="mt-4 inline-block text-primary underline"
         >
-          {COPY.backToCatalog}
+          {t("gameModules.reactionDuel.backToCatalog")}
         </Link>
       </div>
     );
@@ -257,7 +259,10 @@ export function Game({ roomCode, sdk }: GameProps) {
   }
 
   if (displayPhase === "waiting_red" || displayPhase === "green") {
-    const waitingHint = clickedProgress(submittedCount, resultsNeeded);
+    const waitingHint = t("gameModules.reactionDuel.clickedProgress", {
+      submitted: submittedCount,
+      needed: resultsNeeded,
+    });
 
     return (
       <div className="space-y-4">
@@ -270,8 +275,10 @@ export function Game({ roomCode, sdk }: GameProps) {
         <p className="text-center text-xs text-muted-foreground">
           {localHasSubmitted
             ? waitingHint
-            : `${players.length} jogadores · ${
-                displayPhase === "waiting_red" ? "Não cliques ainda" : "Clica agora!"
+            : `${t("gameModules.reactionDuel.playersCount", { count: players.length })} · ${
+                displayPhase === "waiting_red"
+                  ? t("gameModules.reactionDuel.dontClickYet")
+                  : t("gameModules.reactionDuel.clickNow")
               }`}
         </p>
       </div>
@@ -280,17 +287,17 @@ export function Game({ roomCode, sdk }: GameProps) {
 
   return (
     <div className="rounded-xl border border-border bg-card p-6 text-center">
-      <p className="text-muted-foreground">{COPY.waiting}</p>
+      <p className="text-muted-foreground">{t("gameModules.reactionDuel.waiting")}</p>
       <div className="mt-2 flex justify-center">
         <RoomCodeDisplay code={roomCode} variant="inline" />
       </div>
       {status === "waiting" && started && (
         <p className="mt-2 text-xs text-muted-foreground">
-          A voltar ao lobby…
+          {t("gameModules.reactionDuel.returningToLobby")}
         </p>
       )}
       <Link href={lobbyUrl} className="mt-4 inline-block text-sm text-primary underline">
-        Voltar ao lobby
+        {t("gameModules.reactionDuel.backToLobby")}
       </Link>
     </div>
   );

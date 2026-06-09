@@ -10,6 +10,7 @@ import {
 } from "@/lib/rooms/click-frenzy-state";
 import { mergePlayerLists, mergePlayerRow } from "@/lib/rooms/normalize-player";
 import type { RoomPlayer } from "@/types/platform";
+import { useI18n } from "@/features/i18n/locale-provider";
 
 const MAX_PLAYERS_FALLBACK = 8;
 const PHASE_TICK_MS = 100;
@@ -24,6 +25,7 @@ type ClickFrenzyRoomState = {
 };
 
 export function useClickFrenzyRoom(roomCode: string) {
+  const { t } = useI18n();
   const [state, setState] = useState<ClickFrenzyRoomState>(() => ({
     roomId: null,
     status: "waiting",
@@ -44,7 +46,7 @@ export function useClickFrenzyRoom(roomCode: string) {
           error?: string;
           detail?: string;
         };
-        setError(body.detail ?? body.error ?? "Sala não encontrada.");
+        setError(body.detail ?? body.error ?? t("clickFrenzy.roomNotFound"));
         return;
       }
       const data = (await res.json()) as {
@@ -68,9 +70,9 @@ export function useClickFrenzyRoom(roomCode: string) {
       }));
       setError(null);
     } catch {
-      setError("Ligação indisponível.");
+      setError(t("clickFrenzy.connectionUnavailable"));
     }
-  }, [roomCode]);
+  }, [roomCode, t]);
 
   useEffect(() => {
     void refresh();

@@ -105,6 +105,12 @@ export class PartyUpSDK {
     }
   }
 
+  /** Atualiza a UI durante o jogo sem chamar a API (ranking final em endGame). */
+  reportScore(score: number): void {
+    this.options.onScoreUpdate?.(score);
+    this.emit("SCORE_UPDATED", { score });
+  }
+
   async submitScore(payload: SubmitScorePayload): Promise<void> {
     const check = validateSubmitScorePayload(payload, {
       metric: payload.metric ?? this.options.metric,

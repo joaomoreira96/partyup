@@ -23,6 +23,7 @@ import { roomPlayerLabel } from "@/lib/rooms/player-label";
 import { getRoomPlayerId } from "@/lib/rooms/player-session";
 import { beginRoomTransition } from "@/lib/rooms/leave-room";
 import { RoomCodeDisplay } from "@/features/rooms/components/room-code-display";
+import { useI18n } from "@/features/i18n/locale-provider";
 
 type GameProps = {
   roomCode: string;
@@ -33,6 +34,7 @@ type GameProps = {
 };
 
 export function Game({ roomCode, sdk }: GameProps) {
+  const { t } = useI18n();
   const { metadata, players, phase, now, hostUserId, error, patchMetadata, refresh } =
     useClickFrenzyRoom(roomCode);
 
@@ -154,9 +156,9 @@ export function Game({ roomCode, sdk }: GameProps) {
   if (!roomCode) {
     return (
       <div className="rounded-xl border border-border bg-card p-6 text-center">
-        <p className="text-muted-foreground">Sala não encontrada.</p>
+        <p className="text-muted-foreground">{t("clickFrenzy.roomNotFound")}</p>
         <Link href={`/games/${CLICK_FRENZY_SLUG}`} className="mt-4 inline-block text-primary underline">
-          Voltar ao jogo
+          {t("clickFrenzy.backToGame")}
         </Link>
       </div>
     );
@@ -191,7 +193,7 @@ export function Game({ roomCode, sdk }: GameProps) {
       const entry = ranked.find((r) => r.playerId === p.id);
       return {
         playerId: p.id,
-        name: labelByPlayer.get(p.id) ?? "Jogador",
+        name: labelByPlayer.get(p.id) ?? t("clickFrenzy.defaultPlayer"),
         clicks: entry?.clicks ?? 0,
         isSelf: p.id === localPlayerId,
       };
@@ -229,7 +231,7 @@ export function Game({ roomCode, sdk }: GameProps) {
     const results: ResultEntry[] = ranked.map((r) => ({
       rank: r.rank,
       playerId: r.playerId,
-      name: labelByPlayer.get(r.playerId) ?? "Jogador",
+      name: labelByPlayer.get(r.playerId) ?? t("clickFrenzy.defaultPlayer"),
       clicks: r.clicks,
       isSelf: r.playerId === localPlayerId,
     }));
@@ -246,12 +248,12 @@ export function Game({ roomCode, sdk }: GameProps) {
 
   return (
     <div className="rounded-xl border border-border bg-card p-6 text-center">
-      <p className="text-muted-foreground">A preparar a partida…</p>
+      <p className="text-muted-foreground">{t("clickFrenzy.preparing")}</p>
       <div className="mt-2 flex justify-center">
         <RoomCodeDisplay code={roomCode} variant="inline" />
       </div>
       <Link href={lobbyUrl} className="mt-4 inline-block text-sm text-primary underline">
-        Voltar ao lobby
+        {t("clickFrenzy.backToLobby")}
       </Link>
     </div>
   );

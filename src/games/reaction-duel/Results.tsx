@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { COPY, REACTION_DUEL_SLUG } from "@/games/reaction-duel/constants";
+import { useI18n } from "@/features/i18n/locale-provider";
+import { REACTION_DUEL_SLUG } from "@/games/reaction-duel/constants";
 import type { DuelPlayerResult } from "@/lib/rooms/duel-state";
 import type { RoomStatsRecordInfo } from "@/hooks/use-room";
 import { Button } from "@/components/ui/button";
@@ -78,11 +79,12 @@ export function Results({
   loading,
   statsInfo,
 }: ResultsProps) {
+  const { t } = useI18n();
   const winner = results.find((r) => r.playerId === winnerPlayerId);
 
   return (
     <div className="space-y-6 rounded-2xl border border-border bg-card p-6">
-      <h2 className="text-xl font-bold">{COPY.results}</h2>
+      <h2 className="text-xl font-bold">{t("gameModules.reactionDuel.results")}</h2>
 
       {statsInfo && <StatsDebugPanel stats={statsInfo} />}
 
@@ -92,12 +94,16 @@ export function Results({
 
       {winner && (
         <p className="text-lg">
-          {COPY.winner}: <span className="font-semibold text-primary">{winner.displayName}</span>
+          {t("gameModules.reactionDuel.winner")}:{" "}
+          <span className="font-semibold text-primary">{winner.displayName}</span>
           {!winner.tooEarly && winner.reactionMs !== null && (
             <span className="text-muted-foreground"> ({winner.reactionMs}ms)</span>
           )}
           {winner.tooEarly && (
-            <span className="text-destructive"> ({COPY.tooEarly})</span>
+            <span className="text-destructive">
+              {" "}
+              ({t("gameModules.reactionDuel.tooEarly")})
+            </span>
           )}
         </p>
       )}
@@ -110,11 +116,13 @@ export function Results({
           >
             <span>
               {result.displayName}
-              {result.playerId === localPlayerId ? ` (${COPY.you})` : ""}
+              {result.playerId === localPlayerId
+                ? ` (${t("gameModules.reactionDuel.you")})`
+                : ""}
             </span>
             <span className="font-mono tabular-nums">
               {result.tooEarly
-                ? COPY.tooEarly
+                ? t("gameModules.reactionDuel.tooEarly")
                 : result.reactionMs !== null
                   ? `${result.reactionMs}ms · ${result.score} pts`
                   : "—"}
@@ -125,10 +133,12 @@ export function Results({
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button className="flex-1" disabled={loading} onClick={onPlayAgain}>
-          {COPY.playAgain}
+          {t("gameModules.reactionDuel.playAgain")}
         </Button>
         <Button variant="outline" className="flex-1" asChild>
-          <Link href={`/games/${REACTION_DUEL_SLUG}`}>{COPY.backToCatalog}</Link>
+          <Link href={`/games/${REACTION_DUEL_SLUG}`}>
+            {t("gameModules.reactionDuel.backToCatalog")}
+          </Link>
         </Button>
       </div>
     </div>

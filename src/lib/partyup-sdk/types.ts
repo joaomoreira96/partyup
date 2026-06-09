@@ -22,6 +22,7 @@ export type GameSdkEventType =
   | "ROOM_CREATED"
   | "ROOM_JOINED"
   | "ROOM_STARTED"
+  | "SCORE_UPDATED"
   | "SCORE_SUBMITTED";
 
 export type SdkUnlockedAchievement = {

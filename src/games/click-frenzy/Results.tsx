@@ -1,6 +1,7 @@
 "use client";
 
 import { Crown, Loader2, RotateCcw } from "lucide-react";
+import { useI18n } from "@/features/i18n/locale-provider";
 
 export type ResultEntry = {
   rank: number;
@@ -20,24 +21,24 @@ type ResultsProps = {
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 export function Results({ results, loading, isHost, onPlayAgain }: ResultsProps) {
+  const { t } = useI18n();
   const winner = results.find((r) => r.rank === 1);
 
   return (
     <div className="space-y-5">
       <div className="rounded-[var(--radius-premium)] border border-border bg-gradient-to-br from-primary/10 to-secondary/10 p-6 text-center">
         <Crown className="mx-auto size-8 text-warning" aria-hidden />
-        <h2 className="mt-2 text-lg font-bold">Fim de jogo!</h2>
+        <h2 className="mt-2 text-lg font-bold">{t("clickFrenzy.gameOver")}</h2>
         {winner ? (
           <p className="mt-1 text-muted-foreground">
-            Vencedor: <span className="font-semibold text-foreground">{winner.name}</span>{" "}
-            com {winner.clicks} cliques
+            {t("clickFrenzy.winner", { name: winner.name, clicks: winner.clicks })}
           </p>
         ) : (
-          <p className="mt-1 text-muted-foreground">Sem cliques registados.</p>
+          <p className="mt-1 text-muted-foreground">{t("clickFrenzy.noClicks")}</p>
         )}
       </div>
 
-      <ul className="space-y-2" aria-label="Classificação final">
+      <ul className="space-y-2" aria-label={t("clickFrenzy.finalRanking")}>
         {results.map((entry) => (
           <li
             key={entry.playerId}
@@ -53,14 +54,16 @@ export function Results({ results, loading, isHost, onPlayAgain }: ResultsProps)
               </span>
               <span className="font-medium">
                 {entry.name}
-                {entry.isSelf ? " (tu)" : ""}
+                {entry.isSelf ? t("clickFrenzy.you") : ""}
               </span>
             </span>
             <span className="font-bold tabular-nums">{entry.clicks}</span>
           </li>
         ))}
         {results.length === 0 && (
-          <li className="text-center text-muted-foreground">A calcular resultados…</li>
+          <li className="text-center text-muted-foreground">
+            {t("clickFrenzy.calculating")}
+          </li>
         )}
       </ul>
 
@@ -75,7 +78,7 @@ export function Results({ results, loading, isHost, onPlayAgain }: ResultsProps)
         ) : (
           <RotateCcw className="size-4" aria-hidden />
         )}
-        {isHost ? "Jogar novamente" : "Voltar ao lobby"}
+        {isHost ? t("clickFrenzy.playAgain") : t("clickFrenzy.backToLobby")}
       </button>
     </div>
   );

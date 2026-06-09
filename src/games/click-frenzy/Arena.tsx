@@ -2,6 +2,7 @@
 
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { MousePointerClick } from "lucide-react";
+import { useI18n } from "@/features/i18n/locale-provider";
 
 export type ArenaLiveEntry = {
   playerId: string;
@@ -29,10 +30,10 @@ export function Arena({
   disabled,
   onTap,
 }: ArenaProps) {
+  const { t } = useI18n();
   const seconds = Math.max(0, Math.ceil(timeLeftMs / 1000));
 
   function handlePointerDown(e: ReactPointerEvent<HTMLButtonElement>) {
-    // Resposta imediata e fiavel em desktop e mobile (evita atraso do click).
     e.preventDefault();
     if (!disabled) onTap();
   }
@@ -40,7 +41,9 @@ export function Arena({
   return (
     <div className="flex select-none flex-col items-center gap-5">
       <div className="flex w-full items-center justify-between text-sm">
-        <span className="font-medium text-muted-foreground">Tempo restante</span>
+        <span className="font-medium text-muted-foreground">
+          {t("clickFrenzy.timeLeft")}
+        </span>
         <span
           className={`text-2xl font-black tabular-nums ${
             seconds <= 3 ? "text-destructive" : "text-foreground"
@@ -55,7 +58,7 @@ export function Arena({
         type="button"
         onPointerDown={handlePointerDown}
         disabled={disabled}
-        aria-label="Clica para somar pontos"
+        aria-label={t("clickFrenzy.tapAria")}
         style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
         className="relative flex aspect-square w-[min(72vw,260px)] min-h-[200px] min-w-[200px] items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-primary-foreground shadow-xl outline-none transition-transform duration-75 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-4 focus-visible:ring-ring"
       >
@@ -68,22 +71,25 @@ export function Arena({
       <div className="flex w-full items-center justify-center gap-6 text-center">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Pontuação
+            {t("clickFrenzy.score")}
           </p>
           <p className="text-xl font-bold tabular-nums">{score}</p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Posição
+            {t("clickFrenzy.position")}
           </p>
           <p className="text-xl font-bold tabular-nums">
-            {position}º / {totalPlayers}
+            {t("clickFrenzy.positionValue", { position, total: totalPlayers })}
           </p>
         </div>
       </div>
 
       {ranking.length > 1 && (
-        <ul className="w-full space-y-1.5 text-sm" aria-label="Classificação ao vivo">
+        <ul
+          className="w-full space-y-1.5 text-sm"
+          aria-label={t("clickFrenzy.finalRanking")}
+        >
           {ranking.map((entry, index) => (
             <li
               key={entry.playerId}
@@ -93,7 +99,7 @@ export function Arena({
             >
               <span className="truncate">
                 {index + 1}. {entry.name}
-                {entry.isSelf ? " (tu)" : ""}
+                {entry.isSelf ? t("clickFrenzy.you") : ""}
               </span>
               <span className="font-semibold tabular-nums">{entry.clicks}</span>
             </li>

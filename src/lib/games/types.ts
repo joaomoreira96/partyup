@@ -1,4 +1,5 @@
 import type { PartyUpSDK } from "@/lib/partyup-sdk";
+import type { Locale } from "@/i18n/config";
 import type { GameSessionResult, LeaderboardMetric } from "@/types/platform";
 
 /** @deprecated Use SDK via GameMountContext.sdk */
@@ -23,6 +24,8 @@ export interface GameMountContext {
   isGuest: boolean;
   roomId?: string;
   multiplayer?: boolean;
+  /** Locale activo — jogos imperativos usam createGameMountI18n(locale). */
+  locale: Locale;
 }
 
 export interface GameModule {

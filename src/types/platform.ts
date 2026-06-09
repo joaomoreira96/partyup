@@ -153,6 +153,8 @@ export interface GameRecord {
   /** Nome em inglês */
   name_en?: string;
   description: string;
+  /** Descrição em inglês */
+  description_en?: string;
   thumbnail_url: string | null;
   banner_url: string | null;
   module_id: string;

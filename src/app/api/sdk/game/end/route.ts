@@ -56,15 +56,15 @@ export async function POST(request: Request) {
   const ip = getClientIp(request);
   const user = await getSessionUser();
 
-  if (user && submitScore) {
+  if (user) {
     const banCheck = await assertNotBanned(user.id, "score_submit", ip);
     if (banCheck.banned) {
       return NextResponse.json({ message: banCheck.message }, { status: 403 });
     }
 
     const rateLimited = await enforceRateLimits(
-      RATE_LIMITS.scoreSubmit.map((r) => ({
-        key: rateLimitKey("score_submit", user.id, ip, r.windowSeconds),
+      RATE_LIMITS.gameEnd.map((r) => ({
+        key: rateLimitKey("game_end", user.id, ip, r.windowSeconds),
         ...r,
       })),
       { userId: user.id, ip }

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/features/i18n/locale-provider";
 
 export function Countdown({ startAt }: { startAt: number }) {
+  const { t } = useI18n();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -12,12 +14,12 @@ export function Countdown({ startAt }: { startAt: number }) {
 
   const remaining = Math.max(0, startAt - now);
   const seconds = Math.ceil(remaining / 1000);
-  const label = seconds <= 0 ? "GO" : String(seconds);
+  const label = seconds <= 0 ? t("clickFrenzy.go") : String(seconds);
 
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 text-center">
       <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-        Prepara-te
+        {t("clickFrenzy.prepare")}
       </p>
       <div
         key={label}
@@ -26,7 +28,7 @@ export function Countdown({ startAt }: { startAt: number }) {
       >
         {label}
       </div>
-      <p className="text-muted-foreground">Clica o mais rápido que conseguires!</p>
+      <p className="text-muted-foreground">{t("clickFrenzy.tapFast")}</p>
     </div>
   );
 }

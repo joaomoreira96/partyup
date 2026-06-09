@@ -57,6 +57,23 @@ describe("PartyUpSDK", () => {
     });
   });
 
+  it("reportScore updates UI without calling the API", () => {
+    const scores: number[] = [];
+    const sdk = createPartyUpSDK({
+      gameId: "g1",
+      gameSlug: "snake",
+      moduleId: "snake",
+      user: { displayName: "Test", isGuest: false, id: "u1" },
+      onScoreUpdate: (score) => scores.push(score),
+    });
+
+    sdk.reportScore(3);
+    sdk.reportScore(7);
+
+    expect(scores).toEqual([3, 7]);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("calls startGame API and moves to PLAYING", async () => {
     const sdk = createPartyUpSDK({
       gameId: "g1",

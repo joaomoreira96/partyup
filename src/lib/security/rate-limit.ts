@@ -81,5 +81,8 @@ export const RATE_LIMITS = {
     { limit: 100, windowSeconds: 86400 },
   ],
   roomJoin: [{ limit: 30, windowSeconds: 60 }],
-  scoreSubmit: [{ limit: 10, windowSeconds: 60 }],
+  /** Updates intermédios durante o jogo (ex.: leaderboard ao vivo). */
+  scoreSubmit: [{ limit: 20, windowSeconds: 60 }],
+  /** Fim de sessão — limite separado para não bloquear após updates intermédios. */
+  gameEnd: [{ limit: 30, windowSeconds: 60 }],
 } as const;
